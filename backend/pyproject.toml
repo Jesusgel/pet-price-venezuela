@@ -16,11 +16,18 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "aiosqlite>=0.22.1",
     "pytest",
     "pytest-asyncio",
+    "pytest-cov>=7.1.0",
     "pytest-mock",
     "ruff",
 ]
 
 [tool.ruff]
 line-length = 88
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+pythonpath = ["."]
