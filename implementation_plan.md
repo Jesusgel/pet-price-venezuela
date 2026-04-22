@@ -196,7 +196,7 @@ erDiagram
 
 ## Fases de Desarrollo
 
-### Fase 1: Backend Completo (APIs funcionales) ← **EMPEZAMOS AQUÍ**
+### Fase 1: Backend Completo (APIs funcionales) ← **COMPLETADA**
 
 El objetivo de esta fase es tener **todas las APIs funcionando y probables** desde Swagger (`/docs`) antes de tocar el frontend.
 
@@ -237,13 +237,37 @@ El objetivo de esta fase es tener **todas las APIs funcionando y probables** des
 
 ---
 
-### Fase 2: Frontend (Next.js) — *Feature futura*
+### Fase 2: Frontend (Next.js) ← **EMPEZAMOS AQUÍ**
 
-- Inicializar Next.js con TypeScript + Tailwind CSS + App Router
-- Vista catálogo responsive (web + móvil)
-- Cabecera sticky con tasa del dólar
-- Buscador con debounce
-- TanStack Query para data fetching
+El objetivo de esta fase es construir una interfaz web **premium, responsiva y altamente estética** que consuma las APIs construidas en la Fase 1.
+
+#### 2.1 Especificaciones Técnicas y Herramientas
+- **Framework:** Next.js 14+ (App Router).
+- **Lenguaje:** TypeScript estricto.
+- **Estilos:** Tailwind CSS v3 (Confirmado, según las instrucciones iniciales del plan). También se implementará un diseño con "Glassmorphism", modo oscuro elegante, y micro-animaciones usando Framer Motion (opcional) o CSS nativo para una experiencia fluida.
+- **Data Fetching & Caché:** TanStack Query (React Query) v5 para manejar estados de carga, reintentos y caché eficiente de los productos y la tasa BCV.
+- **Cliente HTTP:** Axios o Fetch nativo integrado con TanStack Query.
+
+#### 2.2 Arquitectura del Frontend (`/frontend/src/`)
+- `app/`: Rutas, layouts y páginas de Next.js.
+- `components/`: Componentes reutilizables (UI base).
+  - `Header`: Cabecera sticky con la tasa del dólar actual en tiempo real.
+  - `ProductCard`: Tarjeta premium de producto con efectos hover.
+  - `SearchBar`: Buscador con *debounce* para optimizar llamadas a la API.
+- `hooks/`: Hooks personalizados.
+  - `useProducts`: Hook para obtener y filtrar productos (usa TanStack Query).
+  - `useExchangeRate`: Hook para obtener la tasa actual.
+- `lib/` o `services/`: Configuración del cliente API que apunta al backend FastAPI.
+
+#### 2.3 Diseño UI/UX (Estética Premium)
+- **Paleta de Colores:** Uso de colores armoniosos (no genéricos), transiciones suaves, y sombras (box-shadows) sutiles.
+- **Tipografía:** Uso de fuentes modernas de Google Fonts (por ejemplo, *Inter* u *Outfit*).
+- **Animaciones:** Micro-interacciones visuales al pasar el mouse por los productos, y estado de "carga" (skeletons) bien diseñados mientras TanStack Query obtiene la data.
+
+#### 2.4 Criterios de Éxito de la Fase 2
+- Inicializar el proyecto con `npx create-next-app@latest` sin interactividad.
+- Mapear el catálogo de productos con sus precios calculados en Bolívares (Bs.).
+- Confirmar el despliegue del frontend conectándose exitosamente al backend en desarrollo (localhost) y eventualmente a Vercel/Railway.
 
 ---
 
@@ -286,4 +310,43 @@ El objetivo de esta fase es tener **todas las APIs funcionando y probables** des
 ---
 
 > [!IMPORTANT]
-> **Próximo paso:** Una vez que apruebes este plan, comienzo creando toda la **Fase 1** — estructura de archivos, Docker, modelos, servicio de tasa (DolarAPI), endpoints y seed de datos. Todo el backend funcional.
+> **Próximo paso (Fase 2):** A continuación te presento el plan de ejecución detallado para iniciar la Fase 2 (Frontend). Revisa y aprueba este plan para que proceda a ejecutarlo.
+
+---
+
+## Plan de Ejecución - Fase 2 (Frontend)
+
+Para iniciar con la Fase 2, ejecutaré los siguientes pasos técnicos respetando tus reglas de **Frontend Architect**:
+
+### 1. Inicialización del Proyecto Next.js
+- Eliminar el directorio `frontend` actual (que está vacío) para que Next.js lo cree limpiamente.
+- Ejecutar: `npx create-next-app@latest frontend --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm --yes`
+- Esto configurará Next.js 14+ con App Router, TypeScript y Tailwind CSS v3 de forma automática.
+
+### 2. Instalación de Dependencias Core
+- `npm install @tanstack/react-query @tanstack/react-query-devtools axios` (Data fetching & Client).
+- `npm install framer-motion clsx tailwind-merge` (Animaciones y utilidades de clases para UI Premium).
+- `npm install lucide-react` (Para íconos elegantes).
+
+### 3. Configuración de Arquitectura Frontend (`/frontend/src/`)
+- Crear directorios: `components/ui`, `hooks`, `services`, `types`.
+- Configurar el cliente Axios en `services/api.ts` apuntando a `http://localhost:8000/api/v1` (backend FastAPI).
+- Configurar el provider de TanStack Query en el layout principal.
+
+### 4. Implementación del Diseño y UI/UX (Glassmorphism & Premium)
+- Modificar `tailwind.config.ts` para incluir colores cálidos "Autumn" (terracotas, cremas oscuros) y utilidades de Glassmorphism.
+- Importar tipografía **Inter** u **Outfit** de Google Fonts en el `layout.tsx`.
+- Crear el componente global de cabecera (`Header.tsx`) que mostrará la tasa BCV actual.
+
+### 5. Desarrollo de Funcionalidades
+- **Hook `useExchangeRate`**: Consume `GET /rate` usando React Query.
+- **Hook `useProducts`**: Consume `GET /products` usando React Query.
+- **Componente `ProductCard`**: Tarjeta con imagen (placeholder elegante), precio en USD y precio calculado en Bs. Incluirá animaciones de *hover* con Framer Motion.
+- **Página Principal (`page.tsx`)**: Listado de productos con Skeletons de carga.
+
+### 💡 Preguntas para ti antes de iniciar:
+1. ¿Estás de acuerdo con el uso de `axios` + `@tanstack/react-query` o prefieres usar `fetch` nativo + TanStack Query?
+2. ¿Te gustaría que implemente un modo oscuro por defecto (Dark Mode) o que el usuario pueda alternarlo?
+
+> [!IMPORTANT]
+> Por favor, confírmame si el plan es correcto y si puedo proceder con el paso 1 (Inicialización del proyecto Next.js).
