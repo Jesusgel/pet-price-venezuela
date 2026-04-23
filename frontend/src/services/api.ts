@@ -16,7 +16,7 @@ export const api = {
     }
     
     const data = await res.json();
-    return data.map((item: any) => ({
+    return data.map((item: Omit<Product, 'price_usd' | 'price_bs' | 'weight_kg'> & { price_usd: string | number, price_bs: string | number | null, weight_kg: string | number | null }) => ({
       ...item,
       price_usd: Number(item.price_usd),
       price_bs: item.price_bs !== null ? Number(item.price_bs) : null,

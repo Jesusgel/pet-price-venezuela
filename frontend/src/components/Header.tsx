@@ -26,7 +26,7 @@ export function Header() {
               <TrendingUp className="w-4 h-4 text-green-600" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                  Tasa BCV
+                  Tasa BCV {rateData?.rate_date ? `(${rateData.rate_date.split('-').reverse().join('/')})` : ''}
                 </span>
                 {isLoading ? (
                   <div className="h-4 w-16 bg-stone-200 animate-pulse rounded" />
