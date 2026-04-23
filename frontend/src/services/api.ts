@@ -1,4 +1,4 @@
-import { Product, ExchangeRate } from '@/types';
+import { Product, ExchangeRate, ProductCreate, ProductUpdate } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -36,5 +36,47 @@ export const api = {
       ...data,
       rate: Number(data.rate)
     };
+  },
+
+  createProduct: async (product: ProductCreate): Promise<Product> => {
+    const res = await fetch(`${API_BASE_URL}/products/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(product),
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to create product');
+    }
+    
+    return res.json();
+  },
+
+  updateProduct: async (id: number, product: ProductUpdate): Promise<Product> => {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(product),
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to update product');
+    }
+    
+    return res.json();
+  },
+
+  deleteProduct: async (id: number): Promise<void> => {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to delete product');
+    }
   }
 };

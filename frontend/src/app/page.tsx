@@ -3,20 +3,66 @@
 import { Header } from '@/components/Header';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { PackageSearch } from 'lucide-react';
+import { PackageSearch, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { ProductModal } from '@/components/ProductModal';
+import { Toaster, toast } from 'react-hot-toast';
+import { Product, ProductCreate, ProductUpdate } from '@/types';
 
 export default function Home() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   const { data: products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts(search, category);
   const { data: rateData } = useExchangeRate();
+  
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct();
+  const deleteMutation = useDeleteProduct();
+
+  const handleCreateProduct = () => {
+    setEditingProduct(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+      try {
+        await deleteMutation.mutateAsync(id);
+        toast.success('Producto eliminado');
+      } catch (error) {
+        toast.error('Error al eliminar producto');
+      }
+    }
+  };
+
+  const handleModalSubmit = async (data: any) => {
+    try {
+      if (editingProduct) {
+        await updateMutation.mutateAsync({ id: editingProduct.id, data: data as ProductUpdate });
+        toast.success('Producto actualizado');
+      } else {
+        await createMutation.mutateAsync(data as ProductCreate);
+        toast.success('Producto creado');
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error('Ocurrió un error');
+    }
+  };
 
   return (
     <>
+      <Toaster position="top-center" />
       <Header />
       
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
@@ -30,7 +76,15 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="flex w-full md:w-auto gap-3">
+          <div className="flex flex-col w-full md:w-auto gap-4 md:items-end">
+            <button 
+              onClick={handleCreateProduct}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-primary hover:bg-primary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
+            >
+              <Plus className="w-5 h-5" />
+              Añadir Producto
+            </button>
+            <div className="flex w-full md:w-auto gap-3">
             <input 
               type="text" 
               placeholder="Buscar..." 
@@ -47,6 +101,7 @@ export default function Home() {
               <option value="perro">Perro</option>
               <option value="gato">Gato</option>
             </select>
+          </div>
           </div>
         </div>
 
@@ -75,12 +130,23 @@ export default function Home() {
                   key={product.id} 
                   product={product} 
                   rate={rateData?.rate} 
+                  onEdit={handleEditProduct}
+                  onDelete={handleDeleteProduct}
                 />
               ))
             )}
           </div>
         )}
       </main>
+
+      <ProductModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleModalSubmit}
+        initialData={editingProduct}
+        title={editingProduct ? 'Editar Producto' : 'Añadir Producto'}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
     </>
   );
 }

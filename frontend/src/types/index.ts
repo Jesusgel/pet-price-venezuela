@@ -16,3 +16,23 @@ export interface ExchangeRate {
   source: string;
   fetched_at: string;
 }
+
+export interface ProductCreate {
+  name: string;
+  price_usd: number;
+  category: string;
+  brand?: string | null;
+  unit: string;
+  weight_kg?: number | null;
+  is_active?: boolean;
+}
+
+export interface ProductUpdate {
+  name?: string;
+  price_usd?: number;
+  category?: string;
+  brand?: string | null;
+  unit?: string;
+  weight_kg?: number | null;
+  is_active?: boolean;
+}

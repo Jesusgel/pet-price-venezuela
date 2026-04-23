@@ -4,12 +4,16 @@ import { Product } from '@/types';
 import { motion } from 'framer-motion';
 import { Package } from 'lucide-react';
 
+import { Pencil, Trash2 } from 'lucide-react';
+
 interface ProductCardProps {
   product: Product;
   rate: number | undefined;
+  onEdit?: (product: Product) => void;
+  onDelete?: (id: number) => void;
 }
 
-export function ProductCard({ product, rate }: ProductCardProps) {
+export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProps) {
   // Use the API provided price_bs if available, otherwise calculate it if we have the rate
   const priceBs = product.price_bs || (rate ? product.price_usd * rate : null);
 
@@ -19,8 +23,31 @@ export function ProductCard({ product, rate }: ProductCardProps) {
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className="group relative bg-white rounded-2xl p-5 shadow-sm border border-stone-100 hover:shadow-md hover:border-primary/20 transition-all duration-300 flex flex-col h-full"
     >
-      <div className="absolute top-4 right-4 bg-stone-100 text-stone-600 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
-        {product.category}
+      <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+        <div className="bg-stone-100 text-stone-600 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">
+          {product.category}
+        </div>
+        
+        <div className="flex gap-2 transition-opacity duration-200">
+          {onEdit && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onEdit(product); }}
+              className="p-1.5 bg-white/80 backdrop-blur text-stone-600 hover:text-primary rounded-full shadow-sm hover:shadow transition-all"
+              title="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}
+              className="p-1.5 bg-white/80 backdrop-blur text-stone-600 hover:text-red-500 rounded-full shadow-sm hover:shadow transition-all"
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="w-full aspect-square bg-stone-50 rounded-xl mb-4 flex items-center justify-center border border-stone-100 overflow-hidden relative">
