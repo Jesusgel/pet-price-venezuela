@@ -71,8 +71,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
           
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-1">Nombre *</label>
+              <label htmlFor="modal-name" className="block text-sm font-semibold text-stone-700 mb-1">Nombre *</label>
               <input 
+                id="modal-name"
                 required
                 type="text" 
                 value={formData.name}
@@ -83,8 +84,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Precio USD *</label>
+                <label htmlFor="modal-price-usd" className="block text-sm font-semibold text-stone-700 mb-1">Precio USD *</label>
                 <input 
+                  id="modal-price-usd"
                   required
                   type="number" 
                   step="0.01"
@@ -95,8 +97,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Categoría *</label>
+                <label htmlFor="modal-category" className="block text-sm font-semibold text-stone-700 mb-1">Categoría *</label>
                 <select
+                  id="modal-category"
                   required
                   value={formData.category}
                   onChange={e => setFormData({...formData, category: e.target.value})}
@@ -112,8 +115,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Marca</label>
+                <label htmlFor="modal-brand" className="block text-sm font-semibold text-stone-700 mb-1">Marca</label>
                 <input 
+                  id="modal-brand"
                   type="text" 
                   value={formData.brand || ''}
                   onChange={e => setFormData({...formData, brand: e.target.value})}
@@ -121,8 +125,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Unidad *</label>
+                <label htmlFor="modal-unit" className="block text-sm font-semibold text-stone-700 mb-1">Unidad *</label>
                 <select
+                  id="modal-unit"
                   required
                   value={formData.unit}
                   onChange={e => setFormData({...formData, unit: e.target.value})}
@@ -137,8 +142,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-1">Peso (kg)</label>
+              <label htmlFor="modal-weight" className="block text-sm font-semibold text-stone-700 mb-1">Peso (kg)</label>
               <input 
+                id="modal-weight"
                 type="number" 
                 step="0.01"
                 min="0"
