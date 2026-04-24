@@ -109,11 +109,23 @@ pet-price-venezuela/
 
 ## 🧪 Pruebas (QA)
 
-El backend incluye una suite de pruebas para asegurar la calidad de la lógica de negocio y los endpoints.
+El backend incluye suites de pruebas para asegurar la calidad de la lógica de negocio y los endpoints.
 
-```bash
+**Backend (Pytest)**
+```powershell
 cd backend
 uv run pytest
+```
+
+**Frontend (Vitest)**
+```powershell
+cd frontend
+npm run test
+```
+
+```powershell
+# Con reporte de cobertura (mínimo 80%)
+npm run test:coverage
 ```
 *Asegúrate de configurar una base de datos de pruebas si se requiere en tu entorno local.*
 
@@ -122,16 +134,54 @@ uv run pytest
 - **Backend**: Desplegado en Railway. Se manejan las variables de entorno (`DATABASE_URL`, etc.) desde el panel de Railway, y las migraciones se ejecutan automáticamente en el build o start.
 - **Frontend**: Desplegado en Vercel. La variable de entorno `NEXT_PUBLIC_API_URL` debe apuntar al dominio público del backend provisto por Railway.
 
-## ⚡ Inicio Rápido (Copiar y Pegar)
+## ⚡ Inicio Rápido en PowerShell
 
-**Terminal 1: Iniciar Base de Datos y Backend**
-```bash
-docker-compose up -d && cd backend && uv sync && uv run alembic upgrade head && uv run uvicorn app.main:app --reload
+> [!IMPORTANT]
+> En PowerShell **no se puede usar `&&`** entre comandos. Usa `;` para ejecutar comandos secuenciales, o cópialos uno por uno.
+
+### 🖥️ Terminal 1 — Base de Datos + Backend
+
+```powershell
+# 1. Levantar PostgreSQL con Docker
+docker-compose up -d
+
+# 2. Instalar dependencias del backend
+cd backend ; uv sync
+
+# 3. Ejecutar migraciones de base de datos
+uv run alembic upgrade head
+
+# 4. Iniciar el servidor FastAPI (queda en primer plano)
+uv run uvicorn app.main:app --reload
 ```
 
-**Terminal 2: Iniciar Frontend**
-```bash
-cd frontend && npm install && npm run dev
+API disponible en: `http://localhost:8000`  
+Docs interactivos en: `http://localhost:8000/docs`
+
+---
+
+### 🌐 Terminal 2 — Frontend
+
+```powershell
+# 1. Navegar a la carpeta del frontend e instalar dependencias
+cd frontend ; npm install
+
+# 2. Iniciar el servidor de desarrollo
+npm run dev
+```
+
+App disponible en: `http://localhost:3000`
+
+---
+
+### 🧪 Terminal 3 (opcional) — Tests
+
+```powershell
+# Frontend
+cd frontend ; npm run test
+
+# Backend
+cd backend ; uv run pytest
 ```
 
 ---

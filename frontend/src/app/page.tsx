@@ -68,34 +68,34 @@ export default function Home() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
           <div className="max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight mb-3">
+            <h1 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight mb-3 font-display">
               Catálogo de Productos
             </h1>
-            <p className="text-stone-500 text-lg">
+            <p className="text-muted-foreground text-lg">
               Los precios en Bolívares se calculan automáticamente con la tasa del BCV en tiempo real.
             </p>
           </div>
           
           <div className="flex flex-col w-full md:w-auto gap-4 md:items-end">
-            <button 
+            <button
               onClick={handleCreateProduct}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-primary hover:bg-primary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
               <Plus className="w-5 h-5" />
               Añadir Producto
             </button>
             <div className="flex w-full md:w-auto gap-3">
-            <input 
-              type="text" 
-              placeholder="Buscar..." 
+            <input
+              type="text"
+              placeholder="Buscar..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 md:w-64 px-4 py-2.5 rounded-xl border border-stone-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="flex-1 md:w-64 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
             />
-            <select 
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2.5 rounded-xl border border-stone-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-stone-700"
+              className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
             >
               <option value="">Todas</option>
               <option value="perro">Perro</option>
@@ -106,9 +106,9 @@ export default function Home() {
         </div>
 
         {isErrorProducts ? (
-          <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col items-center justify-center text-center">
-            <p className="text-red-600 font-semibold mb-1">Hubo un error al cargar los productos</p>
-            <p className="text-red-500 text-sm">Por favor, asegúrate de que el backend esté en ejecución y la conexión sea correcta.</p>
+          <div className="bg-error/5 p-6 rounded-2xl border border-error/20 flex flex-col items-center justify-center text-center">
+            <p className="text-error font-semibold mb-1">Hubo un error al cargar los productos</p>
+            <p className="text-error/80 text-sm">Por favor, asegúrate de que el backend esté en ejecución y la conexión sea correcta.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -117,12 +117,12 @@ export default function Home() {
                 <ProductCardSkeleton key={i} />
               ))
             ) : products?.length === 0 ? (
-              <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-stone-100 border-dashed">
-                <div className="bg-stone-50 p-4 rounded-full mb-4">
-                  <PackageSearch className="w-8 h-8 text-stone-400" />
+              <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-border border-dashed">
+                <div className="bg-surface-container p-4 rounded-full mb-4">
+                  <PackageSearch className="w-8 h-8 text-outline" />
                 </div>
-                <h3 className="text-lg font-bold text-stone-700 mb-1">No se encontraron productos</h3>
-                <p className="text-stone-500">Prueba con otra búsqueda o categoría.</p>
+                <h3 className="text-lg font-bold text-primary mb-1 font-display">No se encontraron productos</h3>
+                <p className="text-muted-foreground">Prueba con otra búsqueda o categoría.</p>
               </div>
             ) : (
               products?.map((product) => (

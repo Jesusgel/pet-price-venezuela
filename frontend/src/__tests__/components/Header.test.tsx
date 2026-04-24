@@ -79,7 +79,7 @@ describe('Header — estado exitoso', () => {
     expect(screen.getByText(/15\/01\/2024/)).toBeInTheDocument();
   });
 
-  it('muestra el logo PetPrice', () => {
+  it('muestra el logo de la marca "El Samán"', () => {
     vi.mocked(useExchangeRate).mockReturnValue({
       data: { rate: 36.5, rate_date: '2024-01-15', source: 'BCV', fetched_at: '' },
       isLoading: false,
@@ -88,7 +88,9 @@ describe('Header — estado exitoso', () => {
 
     render(<Header />);
 
-    expect(screen.getByText('Pet')).toBeInTheDocument();
-    expect(screen.getByText('Price')).toBeInTheDocument();
+    // El logo img tiene alt="El Samán"
+    expect(screen.getByAltText('El Samán')).toBeInTheDocument();
+    // El texto de marca también debe estar presente
+    expect(screen.getByText('Samán')).toBeInTheDocument();
   });
 });

@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Epilogue, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
-const inter = Inter({
-  variable: "--font-inter",
+const epilogue = Epilogue({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+const workSans = Work_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Pet-Price Venezuela",
+  title: "El Samán — Catálogo de Precios",
   description: "Precios de alimentos para mascotas con tasa oficial BCV",
 };
 
@@ -21,9 +30,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} font-sans antialiased bg-stone-50 text-stone-900`}
+      className={`${epilogue.variable} ${workSans.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col bg-background text-foreground font-sans">
         <Providers>
           {children}
         </Providers>
