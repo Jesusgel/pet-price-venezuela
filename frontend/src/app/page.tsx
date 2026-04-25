@@ -3,8 +3,12 @@
 import { Header } from '@/components/Header';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
+import { ProductRow } from '@/components/ProductRow';
+import { ProductRowSkeleton } from '@/components/ProductRowSkeleton';
+import { ViewToggle } from '@/components/ViewToggle';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useViewMode } from '@/hooks/useViewMode';
 import { PackageSearch, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ProductModal } from '@/components/ProductModal';
@@ -16,6 +20,7 @@ export default function Home() {
   const [category, setCategory] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { viewMode, setViewMode } = useViewMode();
   
   const { data: products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts(search, category);
   const { data: rateData } = useExchangeRate();
@@ -77,31 +82,34 @@ export default function Home() {
           </div>
           
           <div className="flex flex-col w-full md:w-auto gap-4 md:items-end">
-            <button
-              onClick={handleCreateProduct}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              Añadir Producto
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCreateProduct}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                <Plus className="w-5 h-5" />
+                Añadir Producto
+              </button>
+              <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+            </div>
             <div className="flex w-full md:w-auto gap-3">
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 md:w-64 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
-            />
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
-            >
-              <option value="">Todas</option>
-              <option value="perro">Perro</option>
-              <option value="gato">Gato</option>
-            </select>
-          </div>
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 md:w-64 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
+              />
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
+              >
+                <option value="">Todas</option>
+                <option value="perro">Perro</option>
+                <option value="gato">Gato</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -110,7 +118,8 @@ export default function Home() {
             <p className="text-error font-semibold mb-1">Hubo un error al cargar los productos</p>
             <p className="text-error/80 text-sm">Por favor, asegúrate de que el backend esté en ejecución y la conexión sea correcta.</p>
           </div>
-        ) : (
+        ) : viewMode === 'grid' ? (
+          /* ── Vista Grid ── */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {isLoadingProducts ? (
               Array.from({ length: 8 }).map((_, i) => (
@@ -126,10 +135,37 @@ export default function Home() {
               </div>
             ) : (
               products?.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  rate={rateData?.rate} 
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  rate={rateData?.rate}
+                  onEdit={handleEditProduct}
+                  onDelete={handleDeleteProduct}
+                />
+              ))
+            )}
+          </div>
+        ) : (
+          /* ── Vista Lista ── */
+          <div className="flex flex-col gap-2">
+            {isLoadingProducts ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <ProductRowSkeleton key={i} />
+              ))
+            ) : products?.length === 0 ? (
+              <div className="py-16 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-border border-dashed">
+                <div className="bg-surface-container p-4 rounded-full mb-4">
+                  <PackageSearch className="w-8 h-8 text-outline" />
+                </div>
+                <h3 className="text-lg font-bold text-primary mb-1 font-display">No se encontraron productos</h3>
+                <p className="text-muted-foreground">Prueba con otra búsqueda o categoría.</p>
+              </div>
+            ) : (
+              products?.map((product) => (
+                <ProductRow
+                  key={product.id}
+                  product={product}
+                  rate={rateData?.rate}
                   onEdit={handleEditProduct}
                   onDelete={handleDeleteProduct}
                 />
