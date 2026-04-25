@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN SYSTEM — Artisanal Nutrition System
+   Palette source: /frontend/.docs/DESIGN.md
+   ============================================================ */
+
+:root {
+  /* Surface scale */
+  --background:              #fdf9f4;
+  --surface:                 #fdf9f4;
+  --surface-dim:             #ddd9d5;
+  --surface-container-low:   #f7f3ee;
+  --surface-container:       #f1ede8;
+  --surface-container-high:  #ebe8e3;
+  --surface-container-highest:#e6e2dd;
+
+  /* On-surface */
+  --foreground:              #1c1c19;
+  --on-surface-variant:      #4f453e;
+
+  /* Primary — Deep Timber (dark wood brown) */
+  --primary:                 #321d0c;
+  --primary-foreground:      #ffffff;
+  --primary-container:       #4a321f;
+  --on-primary-container:    #bc9a81;
+  --primary-fixed:           #ffdcc3;
+  --primary-fixed-dim:       #e5bfa5;
+
+  /* Secondary — Terracotta (warm earth) */
+  --secondary:               #845326;
+  --secondary-foreground:    #ffffff;
+  --secondary-container:     #febc85;
+  --on-secondary-container:  #78491d;
+
+  /* Tertiary — Sage Leaf (natural green) */
+  --tertiary:                #1f2314;
+  --tertiary-foreground:     #ffffff;
+  --tertiary-container:      #343928;
+  --on-tertiary-container:   #9ea38c;
+
+  /* Error */
+  --error:                   #ba1a1a;
+  --error-foreground:        #ffffff;
+  --error-container:         #ffdad6;
+
+  /* Borders & outlines */
+  --border:                  #d3c4ba;   /* outline-variant */
+  --outline:                 #81756d;
+
+  /* Accent alias (used by buttons in the old code) */
+  --accent:                  #845326;
+  --accent-foreground:       #ffffff;
+
+  /* Muted */
+  --muted:                   #f1ede8;
+  --muted-foreground:        #4f453e;
+}
+
+/* ============================================================
+   Tailwind v4 theme bridge
+   ============================================================ */
+@theme inline {
+  --color-background:                  var(--background);
+  --color-foreground:                  var(--foreground);
+
+  /* Primary */
+  --color-primary:                     var(--primary);
+  --color-primary-foreground:          var(--primary-foreground);
+  --color-primary-container:           var(--primary-container);
+  --color-on-primary-container:        var(--on-primary-container);
+  --color-primary-fixed-dim:           var(--primary-fixed-dim);
+
+  /* Secondary */
+  --color-secondary:                   var(--secondary);
+  --color-secondary-foreground:        var(--secondary-foreground);
+  --color-secondary-container:         var(--secondary-container);
+
+  /* Tertiary */
+  --color-tertiary:                    var(--tertiary);
+  --color-tertiary-foreground:         var(--tertiary-foreground);
+  --color-tertiary-container:          var(--tertiary-container);
+  --color-on-tertiary-container:       var(--on-tertiary-container);
+
+  /* Accent */
+  --color-accent:                      var(--accent);
+  --color-accent-foreground:           var(--accent-foreground);
+
+  /* Muted */
+  --color-muted:                       var(--muted);
+  --color-muted-foreground:            var(--muted-foreground);
+
+  /* Surface scale */
+  --color-surface:                     var(--surface);
+  --color-surface-dim:                 var(--surface-dim);
+  --color-surface-container-low:       var(--surface-container-low);
+  --color-surface-container:           var(--surface-container);
+  --color-surface-container-high:      var(--surface-container-high);
+  --color-surface-container-highest:   var(--surface-container-highest);
+
+  /* On-surface */
+  --color-on-surface-variant:          var(--on-surface-variant);
+
+  /* Borders */
+  --color-border:                      var(--border);
+  --color-outline:                     var(--outline);
+
+  /* Error */
+  --color-error:                       var(--error);
+  --color-error-foreground:            var(--error-foreground);
+  --color-error-container:             var(--error-container);
+
+  /* Typography */
+  --font-display: 'Epilogue', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    'Work Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* Animations */
+  --animate-fade-in:  fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+}
+
+/* ============================================================
+   Keyframes
+   ============================================================ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* ============================================================
+   Glass / Sticky header panel
+   Tinted shadow using primary Deep Timber at low opacity
+   ============================================================ */
+.glass-panel {
+  background: rgba(253, 249, 244, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px -2px rgba(50, 29, 12, 0.08),
+              0 2px 4px -1px  rgba(50, 29, 12, 0.04);
+}
+
+/* ============================================================
+   Tinted card shadow (Level 2 — product cards)
+   ============================================================ */
+.card-shadow {
+  box-shadow: 0 2px 8px -1px  rgba(50, 29, 12, 0.10),
+              0 1px 3px  0px  rgba(50, 29, 12, 0.06);
+}
+
+.card-shadow-hover {
+  box-shadow: 0 8px 24px -4px rgba(50, 29, 12, 0.14),
+              0 3px 8px  -2px rgba(50, 29, 12, 0.08);
+}

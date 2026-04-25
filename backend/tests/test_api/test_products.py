@@ -75,3 +75,91 @@ async def test_read_products_filter_search(client: AsyncClient, db_session):
     data2 = response2.json()
     assert len(data2) == 1
     assert data2[0]["name"] == "Treat Beta"
+
+@pytest.mark.asyncio
+async def test_create_product(client: AsyncClient, db_session):
+    from app.repositories.rate_repository import ExchangeRateRepository
+    from datetime import date
+    
+    rate_repo = ExchangeRateRepository(db_session)
+    await rate_repo.create(rate=Decimal("50.0"), rate_date=date.today(), source="integration")
+    
+    new_product = {
+        "name": "New Cat Toy",
+        "price_usd": "5.50",
+        "category": "Toy",
+        "unit": "piece"
+    }
+    
+    response = await client.post("/api/v1/products/", json=new_product)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == "New Cat Toy"
+    assert "id" in data
+    assert Decimal(data["price_bs"]) == Decimal("275.0")
+
+@pytest.mark.asyncio
+async def test_read_product_by_id(client: AsyncClient, db_session):
+    from app.repositories.rate_repository import ExchangeRateRepository
+    from datetime import date
+    
+    rate_repo = ExchangeRateRepository(db_session)
+    await rate_repo.create(rate=Decimal("40.0"), rate_date=date.today(), source="integration")
+    
+    p = Product(name="Food Alpha", price_usd=Decimal("10.0"), category="Cat", unit="kg")
+    db_session.add(p)
+    await db_session.commit()
+    await db_session.refresh(p)
+    
+    response = await client.get(f"/api/v1/products/{p.id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Food Alpha"
+    assert Decimal(data["price_bs"]) == Decimal("400.0")
+
+@pytest.mark.asyncio
+async def test_update_product(client: AsyncClient, db_session):
+    from app.repositories.rate_repository import ExchangeRateRepository
+    from datetime import date
+    
+    rate_repo = ExchangeRateRepository(db_session)
+    await rate_repo.create(rate=Decimal("40.0"), rate_date=date.today(), source="integration")
+    
+    p = Product(name="Food Alpha", price_usd=Decimal("10.0"), category="Cat", unit="kg")
+    db_session.add(p)
+    await db_session.commit()
+    await db_session.refresh(p)
+    
+    update_data = {
+        "price_usd": "15.0"
+    }
+    
+    response = await client.put(f"/api/v1/products/{p.id}", json=update_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Food Alpha"
+    assert Decimal(data["price_usd"]) == Decimal("15.0")
+    assert Decimal(data["price_bs"]) == Decimal("600.0")
+
+@pytest.mark.asyncio
+async def test_delete_product(client: AsyncClient, db_session):
+    from app.repositories.rate_repository import ExchangeRateRepository
+    from datetime import date
+    
+    rate_repo = ExchangeRateRepository(db_session)
+    await rate_repo.create(rate=Decimal("40.0"), rate_date=date.today(), source="integration")
+    
+    p = Product(name="Food Alpha", price_usd=Decimal("10.0"), category="Cat", unit="kg")
+    db_session.add(p)
+    await db_session.commit()
+    await db_session.refresh(p)
+    
+    response = await client.delete(f"/api/v1/products/{p.id}")
+    assert response.status_code == 204
+    
+    deleted_p = await db_session.get(Product, p.id)
+    assert deleted_p is not None
+    assert deleted_p.is_active is False
+    
+    response_get = await client.get(f"/api/v1/products/{p.id}")
+    assert response_get.status_code == 404

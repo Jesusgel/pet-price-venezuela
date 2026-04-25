@@ -27,7 +27,7 @@ async def db_session():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
         
-    async_session = AsyncSession(engine)
+    async_session = AsyncSession(engine, expire_on_commit=False)
     try:
         yield async_session
     finally:
