@@ -1,7 +1,8 @@
+import math
 from typing import List, Optional
 from fastapi import HTTPException
 
-from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
+from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate, PaginatedProductResponse
 from app.models.product import Product
 from app.repositories.product_repository import ProductRepository
 from app.services.dolar_service import DolarService
@@ -11,24 +12,42 @@ class ProductService:
         self.product_repo = product_repo
         self.dolar_service = dolar_service
 
-    async def get_products_with_ves_price(self, search: Optional[str] = None, category: Optional[str] = None) -> List[ProductResponse]:
+    async def get_products_with_ves_price(
+        self,
+        search: Optional[str] = None,
+        category: Optional[str] = None,
+        page: int = 1,
+        limit: int = 20,
+        sort_by: str = "name",
+        sort_order: str = "asc",
+    ) -> PaginatedProductResponse:
         """
-        Retrieves products from the database and calculates their price in VES
+        Retrieves a paginated, sorted page of products and calculates their price in VES
         using the latest exchange rate.
         """
         latest_rate = await self.dolar_service.get_latest_rate()
         if not latest_rate:
             raise HTTPException(status_code=503, detail="Exchange rate not available")
-        
-        products = await self.product_repo.get_all(search, category)
-        
-        response_list = []
+
+        skip = (page - 1) * limit
+        total = await self.product_repo.count_all(search, category)
+        products = await self.product_repo.get_all(search, category, skip, limit, sort_by, sort_order)
+
+        items = []
         for prod in products:
             prod_dict = prod.model_dump()
             prod_dict["price_bs"] = prod.price_usd * latest_rate.rate
-            response_list.append(ProductResponse(**prod_dict))
-            
-        return response_list
+            items.append(ProductResponse(**prod_dict))
+
+        total_pages = max(math.ceil(total / limit) if limit > 0 else 1, 1)
+
+        return PaginatedProductResponse(
+            items=items,
+            total=total,
+            page=page,
+            limit=limit,
+            total_pages=total_pages,
+        )
 
     async def get_product_by_id_with_ves_price(self, product_id: int) -> ProductResponse:
         latest_rate = await self.dolar_service.get_latest_rate()

@@ -43,13 +43,18 @@ async def test_read_products_integration(client: AsyncClient, db_session):
     db_session.add(p)
     await db_session.commit()
     
-    # 3. Hit endpoint
+    # 3. Hit endpoint — response is now paginated
     response = await client.get("/api/v1/products/")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["name"] == "Food Alpha"
-    assert Decimal(data[0]["price_bs"]) == Decimal("400.0")
+    # Validate paginated envelope
+    assert "items" in data
+    assert data["total"] == 1
+    assert data["page"] == 1
+    assert data["total_pages"] == 1
+    assert len(data["items"]) == 1
+    assert data["items"][0]["name"] == "Food Alpha"
+    assert Decimal(data["items"][0]["price_bs"]) == Decimal("400.0")
     
 @pytest.mark.asyncio
 async def test_read_products_filter_search(client: AsyncClient, db_session):
@@ -67,14 +72,15 @@ async def test_read_products_filter_search(client: AsyncClient, db_session):
     response = await client.get("/api/v1/products/?search=Alpha")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["name"] == "Food Alpha"
+    assert data["total"] == 1
+    assert data["items"][0]["name"] == "Food Alpha"
     
     response2 = await client.get("/api/v1/products/?category=Dog")
     assert response2.status_code == 200
     data2 = response2.json()
-    assert len(data2) == 1
-    assert data2[0]["name"] == "Treat Beta"
+    assert data2["total"] == 1
+    assert data2["items"][0]["name"] == "Treat Beta"
+
 
 @pytest.mark.asyncio
 async def test_create_product(client: AsyncClient, db_session):

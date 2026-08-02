@@ -1,22 +1,54 @@
 from typing import List, Optional
+from sqlalchemy import func, asc, desc
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.product import Product
 
+# Columnas permitidas para ordenar (evita SQL injection por nombre de columna)
+_ALLOWED_SORT_FIELDS = {"name", "price_usd", "category", "created_at"}
+
 class ProductRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_all(self, search: Optional[str] = None, category: Optional[str] = None) -> List[Product]:
+    async def get_all(
+        self,
+        search: Optional[str] = None,
+        category: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort_by: str = "name",
+        sort_order: str = "asc",
+    ) -> List[Product]:
         statement = select(Product).where(Product.is_active == True)
         if search:
             statement = statement.where(Product.name.ilike(f"%{search}%"))
         if category:
             statement = statement.where(Product.category == category)
-            
+
+        # Ordenamiento seguro contra columnas no permitidas
+        safe_sort_by = sort_by if sort_by in _ALLOWED_SORT_FIELDS else "name"
+        sort_col = getattr(Product, safe_sort_by)
+        statement = statement.order_by(asc(sort_col) if sort_order == "asc" else desc(sort_col))
+        statement = statement.offset(skip).limit(limit)
+
         result = await self.session.exec(statement)
         return result.all()
+
+    async def count_all(
+        self,
+        search: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> int:
+        """Cuenta el total de productos activos para calcular páginas."""
+        statement = select(func.count()).select_from(Product).where(Product.is_active == True)
+        if search:
+            statement = statement.where(Product.name.ilike(f"%{search}%"))
+        if category:
+            statement = statement.where(Product.category == category)
+        result = await self.session.exec(statement)
+        return result.one()
 
     async def get_by_id(self, product_id: int) -> Optional[Product]:
         product = await self.session.get(Product, product_id)
