@@ -36,3 +36,14 @@ export interface ProductUpdate {
   weight_kg?: number | null;
   is_active?: boolean;
 }
+
+export interface PaginatedResponse {
+  items: Product[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export type SortField = 'name' | 'price_usd' | 'category' | 'created_at';
+export type SortOrder = 'asc' | 'desc';

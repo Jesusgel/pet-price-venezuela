@@ -14,6 +14,8 @@ interface ProductModalProps {
   isLoading: boolean;
 }
 
+type FormErrors = Partial<Record<'name' | 'price_usd' | 'category' | 'unit', string>>;
+
 export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, isLoading }: ProductModalProps) {
   const [formData, setFormData] = useState<ProductCreate>({
     name: '',
@@ -23,6 +25,8 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     unit: 'unidad',
     weight_kg: null,
   });
+
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (initialData) {
@@ -44,19 +48,45 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
         weight_kg: null,
       });
     }
+    // Limpia errores al abrir/cambiar entre crear y editar
+    setErrors({});
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.name || formData.name.trim().length < 3) {
+      newErrors.name = 'El nombre debe tener al menos 3 caracteres.';
+    }
+    if (!formData.price_usd || Number(formData.price_usd) <= 0) {
+      newErrors.price_usd = 'El precio debe ser mayor a $0.';
+    }
+    if (!formData.category) {
+      newErrors.category = 'Selecciona una categoría.';
+    }
+    if (!formData.unit) {
+      newErrors.unit = 'Selecciona una unidad.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     onSubmit(formData);
   };
 
   /** Clases reutilizables */
-  const inputCls =
-    'w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline ' +
-    'focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all';
+  const inputCls = (field: keyof FormErrors) =>
+    'w-full px-4 py-2.5 rounded-lg border text-foreground placeholder:text-outline ' +
+    'focus:outline-none focus:ring-2 transition-all ' +
+    (errors[field]
+      ? 'border-error bg-error/5 focus:ring-error/25 focus:border-error'
+      : 'border-border bg-surface-container-low focus:ring-secondary/25 focus:border-secondary');
 
   const labelCls = 'block text-sm font-semibold text-on-surface-variant mb-1';
 
@@ -82,19 +112,26 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
           </div>
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white" noValidate>
             {/* Nombre */}
             <div>
               <label htmlFor="modal-name" className={labelCls}>Nombre *</label>
               <input
                 id="modal-name"
-                required
                 type="text"
                 value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className={inputCls}
+                onChange={e => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (errors.name) setErrors({ ...errors, name: undefined });
+                }}
+                className={inputCls('name')}
                 placeholder="Ej: Pedigree Adulto Razas Grandes"
               />
+              {errors.name && (
+                <p className="text-error text-xs mt-1 flex items-center gap-1">
+                  <span>⚠</span> {errors.name}
+                </p>
+              )}
             </div>
 
             {/* Precio USD + Categoría */}
@@ -103,29 +140,43 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                 <label htmlFor="modal-price-usd" className={labelCls}>Precio USD *</label>
                 <input
                   id="modal-price-usd"
-                  required
                   type="number"
                   step="0.01"
-                  min="0"
+                  min="0.01"
                   value={formData.price_usd === undefined || Number.isNaN(formData.price_usd) ? '' : formData.price_usd}
-                  onChange={e => setFormData({ ...formData, price_usd: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                  className={inputCls}
+                  onChange={e => {
+                    setFormData({ ...formData, price_usd: e.target.value === '' ? 0 : parseFloat(e.target.value) });
+                    if (errors.price_usd) setErrors({ ...errors, price_usd: undefined });
+                  }}
+                  className={inputCls('price_usd')}
                 />
+                {errors.price_usd && (
+                  <p className="text-error text-xs mt-1 flex items-center gap-1">
+                    <span>⚠</span> {errors.price_usd}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="modal-category" className={labelCls}>Categoría *</label>
                 <select
                   id="modal-category"
-                  required
                   value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className={inputCls}
+                  onChange={e => {
+                    setFormData({ ...formData, category: e.target.value });
+                    if (errors.category) setErrors({ ...errors, category: undefined });
+                  }}
+                  className={inputCls('category')}
                 >
                   <option value="">Seleccione...</option>
                   <option value="perro">Perro</option>
                   <option value="gato">Gato</option>
                   <option value="otro">Otro</option>
                 </select>
+                {errors.category && (
+                  <p className="text-error text-xs mt-1 flex items-center gap-1">
+                    <span>⚠</span> {errors.category}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -138,7 +189,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                   type="text"
                   value={formData.brand || ''}
                   onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                  className={inputCls}
+                  className={inputCls('unit').replace('border-error', 'border-border').replace('bg-error/5', 'bg-surface-container-low').replace('focus:ring-error/25', 'focus:ring-secondary/25').replace('focus:border-error', 'focus:border-secondary')}
                   placeholder="Ej: Pedigree"
                 />
               </div>
@@ -146,16 +197,23 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                 <label htmlFor="modal-unit" className={labelCls}>Unidad *</label>
                 <select
                   id="modal-unit"
-                  required
                   value={formData.unit}
-                  onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                  className={inputCls}
+                  onChange={e => {
+                    setFormData({ ...formData, unit: e.target.value });
+                    if (errors.unit) setErrors({ ...errors, unit: undefined });
+                  }}
+                  className={inputCls('unit')}
                 >
                   <option value="unidad">Unidad</option>
                   <option value="kg">Kilogramos (kg)</option>
                   <option value="bolsa">Bolsa</option>
                   <option value="lata">Lata</option>
                 </select>
+                {errors.unit && (
+                  <p className="text-error text-xs mt-1 flex items-center gap-1">
+                    <span>⚠</span> {errors.unit}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -169,7 +227,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                 min="0"
                 value={formData.weight_kg ?? ''}
                 onChange={e => setFormData({ ...formData, weight_kg: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                className={inputCls}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all"
                 placeholder="Ej: 2.5"
               />
             </div>

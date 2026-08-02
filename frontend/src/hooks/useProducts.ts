@@ -1,11 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import { ProductCreate, ProductUpdate } from '@/types';
+import { ProductCreate, ProductUpdate, SortField, SortOrder } from '@/types';
 
-export function useProducts(search?: string, category?: string) {
+export function useProducts(
+  search?: string,
+  category?: string,
+  page: number = 1,
+  sortBy: SortField = 'name',
+  sortOrder: SortOrder = 'asc',
+) {
   return useQuery({
-    queryKey: ['products', search, category],
-    queryFn: () => api.getProducts(search, category),
+    queryKey: ['products', search, category, page, sortBy, sortOrder],
+    queryFn: () => api.getProducts(search, category, page, 20, sortBy, sortOrder),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
