@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Package, TrendingUp, X } from 'lucide-react';
+import { Calculator, LayoutGrid, Package, TrendingUp, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
   { label: 'Gestión de Productos', href: '/productos', icon: Package },
   { label: 'Gestión de Tasas', href: '/tasas', icon: TrendingUp },
+  { label: 'Calculadora', href: '/calculadora', icon: Calculator },
 ];
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {

@@ -3,11 +3,13 @@
 import { DashboardCard } from '@/components/DashboardCard';
 import { useProducts } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { Package, TrendingUp } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { Calculator, Package, TrendingUp } from 'lucide-react';
 
 export default function DashboardPage() {
   const { data: productsData, isLoading: isLoadingProducts } = useProducts('', '', 1, 'name', 'asc');
   const { data: rateData, isLoading: isLoadingRate } = useExchangeRate();
+  const { itemCount } = useCart();
 
   const totalProducts = productsData?.total ?? 0;
   const currentRateBs = rateData?.rate ? `Bs. ${Number(rateData.rate).toFixed(2)}` : 'N/D';
@@ -20,12 +22,12 @@ export default function DashboardPage() {
           Bienvenido al Panel de Control
         </h1>
         <p className="text-muted-foreground text-base sm:text-lg max-w-3xl">
-          Selecciona un módulo para gestionar tu inventario de alimentos para mascotas o administrar la tasa de cambio oficial.
+          Selecciona un módulo para gestionar tu inventario, consultar la tasa de cambio oficial o calcular presupuestos de venta rápida.
         </p>
       </div>
 
       {/* Modules Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         <DashboardCard
           title="Gestión de Productos"
           description="Administra el catálogo de productos, precios en dólares (USD), marcas, pesos y categorías."
@@ -45,7 +47,18 @@ export default function DashboardPage() {
           statValue={isLoadingRate ? '...' : currentRateBs}
           badge="Tiempo Real"
         />
+
+        <DashboardCard
+          title="Calculadora de Presupuestos"
+          description="Punto de Venta Lite para armar presupuestos en USD/Bs, calcular pago mixto y vuelto en tiempo real."
+          href="/calculadora"
+          icon={Calculator}
+          statLabel="Ítems en presupuesto"
+          statValue={itemCount}
+          badge="Nuevo POS Lite"
+        />
       </div>
     </main>
   );
 }
+

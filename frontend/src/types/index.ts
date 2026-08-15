@@ -60,3 +60,9 @@ export interface PaginatedResponse {
 
 export type SortField = 'name' | 'price_usd' | 'category' | 'created_at';
 export type SortOrder = 'asc' | 'desc';
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
