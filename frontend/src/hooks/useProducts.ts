@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import { ProductCreate, ProductUpdate, SortField, SortOrder } from '@/types';
+import { ProductCreate, ProductUpdate, SortField, SortOrder, CategoryCreate, BrandCreate } from '@/types';
 
 export function useProducts(
   search?: string,
@@ -16,6 +16,44 @@ export function useProducts(
   });
 }
 
+export function useCategories() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.getCategories(),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CategoryCreate) => api.createCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+}
+
+export function useBrands() {
+  return useQuery({
+    queryKey: ['brands'],
+    queryFn: () => api.getBrands(),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useCreateBrand() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: BrandCreate) => api.createBrand(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    },
+  });
+}
+
 export function useCreateProduct() {
   const queryClient = useQueryClient();
   
@@ -23,6 +61,8 @@ export function useCreateProduct() {
     mutationFn: (data: ProductCreate) => api.createProduct(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
     },
   });
 }
@@ -34,6 +74,8 @@ export function useUpdateProduct() {
     mutationFn: ({ id, data }: { id: number; data: ProductUpdate }) => api.updateProduct(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
     },
   });
 }

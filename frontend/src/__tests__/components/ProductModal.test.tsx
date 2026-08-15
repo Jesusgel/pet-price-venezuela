@@ -13,6 +13,27 @@ vi.mock('framer-motion', () => ({
     React.createElement(React.Fragment, null, children),
 }));
 
+vi.mock('@/hooks/useProducts', () => ({
+  useCategories: () => ({
+    data: [
+      { id: 1, name: 'perro', is_active: true, created_at: '' },
+      { id: 2, name: 'gato', is_active: true, created_at: '' },
+    ],
+  }),
+  useBrands: () => ({
+    data: [
+      { id: 1, name: 'Whiskas', is_active: true, created_at: '' },
+      { id: 2, name: 'Pedigree', is_active: true, created_at: '' },
+    ],
+  }),
+  useCreateCategory: () => ({
+    mutateAsync: vi.fn(),
+  }),
+  useCreateBrand: () => ({
+    mutateAsync: vi.fn(),
+  }),
+}));
+
 import { ProductModal } from '@/components/ProductModal';
 import { Product } from '@/types';
 

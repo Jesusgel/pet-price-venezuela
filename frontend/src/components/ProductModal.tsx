@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Product, ProductCreate, ProductUpdate } from '@/types';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCategories, useBrands, useCreateCategory, useCreateBrand } from '@/hooks/useProducts';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -16,7 +17,14 @@ interface ProductModalProps {
 
 type FormErrors = Partial<Record<'name' | 'price_usd' | 'category' | 'unit', string>>;
 
+const NEW_OPTION_VALUE = '__NEW__';
+
 export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, isLoading }: ProductModalProps) {
+  const { data: categoriesList = [] } = useCategories();
+  const { data: brandsList = [] } = useBrands();
+  const createCategoryMutation = useCreateCategory();
+  const createBrandMutation = useCreateBrand();
+
   const [formData, setFormData] = useState<ProductCreate>({
     name: '',
     price_usd: 0,
@@ -25,6 +33,12 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     unit: 'unidad',
     weight_kg: null,
   });
+
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const [isCreatingBrand, setIsCreatingBrand] = useState(false);
+  const [newBrandName, setNewBrandName] = useState('');
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -48,7 +62,10 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
         weight_kg: null,
       });
     }
-    // Limpia errores al abrir/cambiar entre crear y editar
+    setIsCreatingCategory(false);
+    setNewCategoryName('');
+    setIsCreatingBrand(false);
+    setNewBrandName('');
     setErrors({});
   }, [initialData, isOpen]);
 
@@ -63,8 +80,9 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     if (!formData.price_usd || Number(formData.price_usd) <= 0) {
       newErrors.price_usd = 'El precio debe ser mayor a $0.';
     }
-    if (!formData.category) {
-      newErrors.category = 'Selecciona una categoría.';
+    const finalCategory = isCreatingCategory ? newCategoryName : formData.category;
+    if (!finalCategory || !finalCategory.trim()) {
+      newErrors.category = 'Selecciona o ingresa una categoría.';
     }
     if (!formData.unit) {
       newErrors.unit = 'Selecciona una unidad.';
@@ -74,13 +92,29 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+
+    let finalCategory = formData.category;
+    if (isCreatingCategory && newCategoryName.trim()) {
+      const createdCat = await createCategoryMutation.mutateAsync({ name: newCategoryName.trim() });
+      finalCategory = createdCat.name;
+    }
+
+    let finalBrand = formData.brand;
+    if (isCreatingBrand && newBrandName.trim()) {
+      const createdBrand = await createBrandMutation.mutateAsync({ name: newBrandName.trim() });
+      finalBrand = createdBrand.name;
+    }
+
+    onSubmit({
+      ...formData,
+      category: finalCategory,
+      brand: finalBrand || null,
+    });
   };
 
-  /** Clases reutilizables */
   const inputCls = (field: keyof FormErrors) =>
     'w-full px-4 py-2.5 rounded-lg border text-foreground placeholder:text-outline ' +
     'focus:outline-none focus:ring-2 transition-all ' +
@@ -100,7 +134,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-border"
         >
-          {/* Header del modal */}
+          {/* Header */}
           <div className="flex justify-between items-center px-6 py-5 border-b border-border bg-surface-container-low">
             <h2 className="text-xl font-bold text-primary font-display">{title}</h2>
             <button
@@ -111,7 +145,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
             </button>
           </div>
 
-          {/* Formulario */}
+          {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white" noValidate>
             {/* Nombre */}
             <div>
@@ -156,22 +190,56 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                   </p>
                 )}
               </div>
+
               <div>
                 <label htmlFor="modal-category" className={labelCls}>Categoría *</label>
-                <select
-                  id="modal-category"
-                  value={formData.category}
-                  onChange={e => {
-                    setFormData({ ...formData, category: e.target.value });
-                    if (errors.category) setErrors({ ...errors, category: undefined });
-                  }}
-                  className={inputCls('category')}
-                >
-                  <option value="">Seleccione...</option>
-                  <option value="perro">Perro</option>
-                  <option value="gato">Gato</option>
-                  <option value="otro">Otro</option>
-                </select>
+                {isCreatingCategory ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      id="modal-new-category"
+                      type="text"
+                      autoFocus
+                      placeholder="Nueva categoría..."
+                      value={newCategoryName}
+                      onChange={e => {
+                        setNewCategoryName(e.target.value);
+                        if (errors.category) setErrors({ ...errors, category: undefined });
+                      }}
+                      className={inputCls('category')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingCategory(false)}
+                      className="p-2.5 rounded-lg border border-border text-muted-foreground hover:bg-surface-container"
+                      title="Volver a la lista"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    id="modal-category"
+                    value={formData.category}
+                    onChange={e => {
+                      if (e.target.value === NEW_OPTION_VALUE) {
+                        setIsCreatingCategory(true);
+                        setFormData({ ...formData, category: '' });
+                      } else {
+                        setFormData({ ...formData, category: e.target.value });
+                      }
+                      if (errors.category) setErrors({ ...errors, category: undefined });
+                    }}
+                    className={inputCls('category')}
+                  >
+                    <option value="">Seleccione...</option>
+                    {categoriesList.map(cat => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                    <option value={NEW_OPTION_VALUE}>+ Crear nueva categoría...</option>
+                  </select>
+                )}
                 {errors.category && (
                   <p className="text-error text-xs mt-1 flex items-center gap-1">
                     <span>⚠</span> {errors.category}
@@ -184,15 +252,51 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="modal-brand" className={labelCls}>Marca</label>
-                <input
-                  id="modal-brand"
-                  type="text"
-                  value={formData.brand || ''}
-                  onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                  className={inputCls('unit').replace('border-error', 'border-border').replace('bg-error/5', 'bg-surface-container-low').replace('focus:ring-error/25', 'focus:ring-secondary/25').replace('focus:border-error', 'focus:border-secondary')}
-                  placeholder="Ej: Pedigree"
-                />
+                {isCreatingBrand ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      id="modal-new-brand"
+                      type="text"
+                      autoFocus
+                      placeholder="Nueva marca..."
+                      value={newBrandName}
+                      onChange={e => setNewBrandName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingBrand(false)}
+                      className="p-2.5 rounded-lg border border-border text-muted-foreground hover:bg-surface-container"
+                      title="Volver a la lista"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    id="modal-brand"
+                    value={formData.brand || ''}
+                    onChange={e => {
+                      if (e.target.value === NEW_OPTION_VALUE) {
+                        setIsCreatingBrand(true);
+                        setFormData({ ...formData, brand: '' });
+                      } else {
+                        setFormData({ ...formData, brand: e.target.value });
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all"
+                  >
+                    <option value="">Sin marca / Ninguna</option>
+                    {brandsList.map(b => (
+                      <option key={b.id} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                    <option value={NEW_OPTION_VALUE}>+ Crear nueva marca...</option>
+                  </select>
+                )}
               </div>
+
               <div>
                 <label htmlFor="modal-unit" className={labelCls}>Unidad *</label>
                 <select

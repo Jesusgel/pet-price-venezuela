@@ -5,7 +5,7 @@ import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
 import { ProductRow } from '@/components/ProductRow';
 import { ProductRowSkeleton } from '@/components/ProductRowSkeleton';
 import { ViewToggle } from '@/components/ViewToggle';
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
+import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useViewMode } from '@/hooks/useViewMode';
 import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus } from 'lucide-react';
@@ -47,6 +47,7 @@ export default function ProductosPage() {
     sortBy,
     sortOrder,
   );
+  const { data: categoriesList = [] } = useCategories();
   const { data: rateData } = useExchangeRate();
 
   const products = paginatedData?.items ?? [];
@@ -141,8 +142,11 @@ export default function ProductosPage() {
               className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
             >
               <option value="">Todas las categorías</option>
-              <option value="perro">Perro</option>
-              <option value="gato">Gato</option>
+              {categoriesList.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
             <select
               value={sortKey}

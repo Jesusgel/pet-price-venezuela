@@ -60,3 +60,28 @@ export interface PaginatedResponse {
 
 export type SortField = 'name' | 'price_usd' | 'category' | 'created_at';
 export type SortOrder = 'asc' | 'desc';
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CategoryCreate {
+  name: string;
+  description?: string;
+}
+
+export interface Brand {
+  id: number;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface BrandCreate {
+  name: string;
+}
+

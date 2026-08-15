@@ -1,4 +1,4 @@
-import { Product, ExchangeRate, ProductCreate, ProductUpdate, PaginatedResponse, ExchangeRateUpdate, PaginatedRateResponse } from '@/types';
+import { Product, ExchangeRate, ProductCreate, ProductUpdate, PaginatedResponse, ExchangeRateUpdate, PaginatedRateResponse, Category, CategoryCreate, Brand, BrandCreate } from '@/types';
 
 const getApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -149,5 +149,49 @@ export const api = {
     if (!res.ok) {
       throw new Error('Failed to delete product');
     }
+  },
+
+  getCategories: async (): Promise<Category[]> => {
+    const res = await fetch(`${getApiBaseUrl()}/categories/`);
+    if (!res.ok) {
+      throw new Error('Failed to fetch categories');
+    }
+    return res.json();
+  },
+
+  createCategory: async (category: CategoryCreate): Promise<Category> => {
+    const res = await fetch(`${getApiBaseUrl()}/categories/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(category),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to create category');
+    }
+    return res.json();
+  },
+
+  getBrands: async (): Promise<Brand[]> => {
+    const res = await fetch(`${getApiBaseUrl()}/brands/`);
+    if (!res.ok) {
+      throw new Error('Failed to fetch brands');
+    }
+    return res.json();
+  },
+
+  createBrand: async (brand: BrandCreate): Promise<Brand> => {
+    const res = await fetch(`${getApiBaseUrl()}/brands/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(brand),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to create brand');
+    }
+    return res.json();
   }
 };
