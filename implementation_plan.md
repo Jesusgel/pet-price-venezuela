@@ -1,8 +1,36 @@
 # 🐾 Pet-Price Venezuela — Plan de Implementación (MVP)
 
-## Objetivo
+## Estado del Proyecto
 
-Automatizar el cálculo de precios en Bolívares (Bs) para un negocio de comida de mascotas, usando la tasa oficial del BCV y exponiéndolo a través de una **interfaz web responsive** (desktop y móvil) con un asistente de IA integrado.
+| Fase | Descripción | Estado |
+|------|-------------|--------|
+| **Fase 1** | Backend FastAPI + SQLModel + DolarAPI + DB PostgreSQL | ✅ **Completado** |
+| **Fase 2** | Frontend Next.js 14 + Catálogo + CRUD UI + Tasa BCV | ✅ **Completado** |
+| **Fase 2.5** | **Calculadora de Presupuestos (POS Lite)** + Pago Mixto & Vuelto | ✅ **Completado** |
+| **Fase 3** | Agente de IA Asistente (LangChain / Gemini) | ⛔ **Descartado / Pospuesto por el usuario** |
+| **Fase Final** | **Despliegue & DevOps** (Railway para Backend, Vercel para Frontend) | 🎯 **Próximo Objetivo** |
+
+---
+
+## Módulo Implementado: Calculadora de Presupuestos (POS Lite)
+
+- **Contexto global (`CartContext.tsx`)**: Persistencia local en `localStorage` de los productos seleccionados.
+- **Acceso desde el Dashboard (`/dashboard`)**: Nueva tarjeta de acceso directo al POS Lite.
+- **Ruta de la Calculadora (`/calculadora`)**:
+  - Buscador rápido de productos para agregar ítems sobre la marcha.
+  - Ajuste de cantidades por ítem.
+  - Totales dinámicos en **USD ($)** y **Bolívares (Bs.)** según la tasa oficial BCV vigente.
+  - **Calculadora de Pago Mixto y Vuelto**: Entradas para abono en USD efectivo y Bs. (pago móvil/efectivo), calculando en tiempo real montos pendientes o vuelto a entregar en ambas monedas.
+- **Acción directa en Tarjetas (`ProductCard.tsx`)**: Botón *"Agregar a Presupuesto"* directo desde el catálogo.
+- **Pruebas Automatizadas**: 57/57 tests en frontend (Vitest) y 18/18 en backend (Pytest) pasando exitosamente.
+
+---
+
+## Próximo Paso: Despliegue a Producción
+
+1. **Backend & Base de Datos**: Despliegue en Railway (FastAPI + PostgreSQL + Migraciones Alembic).
+2. **Frontend**: Despliegue en Vercel (Next.js 14 App Router + Variables de entorno).
+
 
 ---
 
