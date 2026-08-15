@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import products, rates
+from app.api import products, rates, categories, brands
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +33,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(products.router, prefix=f"{settings.API_V1_STR}/products", tags=["products"])
+app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["categories"])
+app.include_router(brands.router, prefix=f"{settings.API_V1_STR}/brands", tags=["brands"])
 app.include_router(rates.router, prefix=f"{settings.API_V1_STR}/rate", tags=["rates"])
 
 @app.get("/")

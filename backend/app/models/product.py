@@ -10,7 +10,9 @@ class Product(SQLModel, table=True):
     name: str = Field(index=True)
     price_usd: Decimal = Field(default=0.0, max_digits=10, decimal_places=2)
     category: str = Field(index=True)
+    category_id: Optional[int] = Field(default=None, foreign_key="categories.id")
     brand: Optional[str] = None
+    brand_id: Optional[int] = Field(default=None, foreign_key="brands.id")
     unit: str
     weight_kg: Optional[float] = None
     is_active: bool = Field(default=True)
