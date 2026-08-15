@@ -36,11 +36,13 @@ async def test_get_products_with_ves_price(mocker, product_service, seed_product
     
     products = await product_service.get_products_with_ves_price()
     
-    assert len(products) == 2
-    # Verify accurate decimal multiplication (10.5 * 40.0 = 420.0)
-    assert products[0].price_bs == Decimal("420.0")
-    # Verify precision (5.0 * 40.0 = 200.0)
-    assert products[1].price_bs == Decimal("200.0")
+    assert len(products.items) == 2
+    # Alphabetical order: "Cat Food 500g" comes first (5.0 * 40.0 = 200.0)
+    assert products.items[0].name == "Cat Food 500g"
+    assert products.items[0].price_bs == Decimal("200.00")
+    # "Dog Food 1kg" comes second (10.5 * 40.0 = 420.0)
+    assert products.items[1].name == "Dog Food 1kg"
+    assert products.items[1].price_bs == Decimal("420.00")
 
 @pytest.mark.asyncio
 async def test_get_products_with_ves_price_no_rate_throws_503(mocker, product_service):
