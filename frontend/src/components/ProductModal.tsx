@@ -17,9 +17,16 @@ interface ProductModalProps {
 type FormErrors = Partial<Record<'name' | 'price_usd' | 'category' | 'unit', string>>;
 
 export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, isLoading }: ProductModalProps) {
-  const [formData, setFormData] = useState<ProductCreate>({
+  const [formData, setFormData] = useState<{
+    name: string;
+    price_usd: number | string;
+    category: string;
+    brand: string;
+    unit: string;
+    weight_kg: number | null;
+  }>({
     name: '',
-    price_usd: 0,
+    price_usd: '',
     category: '',
     brand: '',
     unit: 'unidad',
@@ -41,7 +48,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     } else {
       setFormData({
         name: '',
-        price_usd: 0,
+        price_usd: '',
         category: '',
         brand: '',
         unit: 'unidad',
@@ -60,7 +67,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     if (!formData.name || formData.name.trim().length < 3) {
       newErrors.name = 'El nombre debe tener al menos 3 caracteres.';
     }
-    if (!formData.price_usd || Number(formData.price_usd) <= 0) {
+    if (!formData.price_usd || Number.isNaN(Number(formData.price_usd)) || Number(formData.price_usd) <= 0) {
       newErrors.price_usd = 'El precio debe ser mayor a $0.';
     }
     if (!formData.category) {
@@ -77,7 +84,10 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      price_usd: parseFloat(String(formData.price_usd)),
+    });
   };
 
   /** Clases reutilizables */
@@ -143,12 +153,15 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={formData.price_usd === undefined || Number.isNaN(formData.price_usd) ? '' : formData.price_usd}
+                  value={formData.price_usd}
                   onChange={e => {
-                    setFormData({ ...formData, price_usd: e.target.value === '' ? 0 : parseFloat(e.target.value) });
+                    const rawValue = e.target.value;
+                    const cleanedValue = rawValue.replace(/^0+(?=\d)/, '');
+                    setFormData({ ...formData, price_usd: cleanedValue });
                     if (errors.price_usd) setErrors({ ...errors, price_usd: undefined });
                   }}
                   className={inputCls('price_usd')}
+                  placeholder="0.00"
                 />
                 {errors.price_usd && (
                   <p className="text-error text-xs mt-1 flex items-center gap-1">

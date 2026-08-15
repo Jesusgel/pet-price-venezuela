@@ -71,7 +71,17 @@ describe('ProductModal — initialData', () => {
     render(<ProductModal {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Nombre/i);
+    const priceInput = screen.getByLabelText(/Precio USD/i);
     expect((nameInput as HTMLInputElement).value).toBe('');
+    expect((priceInput as HTMLInputElement).value).toBe('');
+  });
+
+  it('elimina ceros a la izquierda en el campo de precio USD al escribir', async () => {
+    render(<ProductModal {...defaultProps} />);
+
+    const priceInput = screen.getByLabelText(/Precio USD/i);
+    await userEvent.type(priceInput, '010');
+    expect((priceInput as HTMLInputElement).value).toBe('10');
   });
 });
 
