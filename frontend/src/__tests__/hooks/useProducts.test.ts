@@ -15,7 +15,7 @@ vi.mock('@/services/api', () => ({
 
 import { api } from '@/services/api';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
-import { Product } from '@/types';
+import { Product, PaginatedResponse } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,6 +30,14 @@ const mockProduct: Product = {
   unit: 'kg',
   weight_kg: 2.5,
   is_active: true,
+};
+
+const mockPaginated: PaginatedResponse = {
+  items: [mockProduct],
+  total: 1,
+  page: 1,
+  limit: 20,
+  total_pages: 1,
 };
 
 /** Crea un QueryClient sin reintentos para tests rápidos. */
@@ -52,24 +60,24 @@ describe('useProducts', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('retorna los productos cuando la API responde correctamente', async () => {
-    vi.mocked(api.getProducts).mockResolvedValue([mockProduct]);
+    vi.mocked(api.getProducts).mockResolvedValue(mockPaginated);
     const client = createTestQueryClient();
 
     const { result } = renderHook(() => useProducts(), { wrapper: createWrapper(client) });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data).toHaveLength(1);
-    expect(result.current.data![0].name).toBe('Pedigree Adulto');
+    expect(result.current.data?.items).toHaveLength(1);
+    expect(result.current.data?.items[0].name).toBe('Pedigree Adulto');
   });
 
   it('pasa search y category a api.getProducts', async () => {
-    vi.mocked(api.getProducts).mockResolvedValue([]);
+    vi.mocked(api.getProducts).mockResolvedValue({ items: [], total: 0, page: 1, limit: 20, total_pages: 1 });
     const client = createTestQueryClient();
 
     renderHook(() => useProducts('pedigree', 'perro'), { wrapper: createWrapper(client) });
 
-    await waitFor(() => expect(api.getProducts).toHaveBeenCalledWith('pedigree', 'perro'));
+    await waitFor(() => expect(api.getProducts).toHaveBeenCalledWith('pedigree', 'perro', 1, 20, 'name', 'asc'));
   });
 
   it('expone isError cuando la API falla', async () => {

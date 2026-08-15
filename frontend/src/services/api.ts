@@ -1,6 +1,14 @@
-import { Product, ExchangeRate, ProductCreate, ProductUpdate, PaginatedResponse } from '@/types';
+import { Product, ExchangeRate, ProductCreate, ProductUpdate, PaginatedResponse, ExchangeRateUpdate, PaginatedRateResponse } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    return `http://${window.location.hostname}:8000/api/v1`;
+  }
+  return 'http://localhost:8000/api/v1';
+};
 
 export const api = {
   getProducts: async (
@@ -19,7 +27,7 @@ export const api = {
     params.append('sort_by', sortBy);
     params.append('sort_order', sortOrder);
 
-    const res = await fetch(`${API_BASE_URL}/products?${params.toString()}`);
+    const res = await fetch(`${getApiBaseUrl()}/products?${params.toString()}`);
 
     if (!res.ok) {
       throw new Error('Failed to fetch products');
@@ -38,7 +46,7 @@ export const api = {
   },
 
   getExchangeRate: async (): Promise<ExchangeRate> => {
-    const res = await fetch(`${API_BASE_URL}/rate`);
+    const res = await fetch(`${getApiBaseUrl()}/rate`);
     
     if (!res.ok) {
       throw new Error('Failed to fetch exchange rate');
@@ -51,8 +59,58 @@ export const api = {
     };
   },
 
+  getRateHistory: async (page: number = 1, limit: number = 20): Promise<PaginatedRateResponse> => {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    const res = await fetch(`${getApiBaseUrl()}/rate/history?${params.toString()}`);
+    if (!res.ok) {
+      throw new Error('Failed to fetch rate history');
+    }
+    const data = await res.json();
+    return {
+      ...data,
+      items: data.items.map((item: ExchangeRate) => ({
+        ...item,
+        rate: Number(item.rate),
+      })),
+    };
+  },
+
+  updateCurrentRate: async (data: ExchangeRateUpdate): Promise<ExchangeRate> => {
+    const res = await fetch(`${getApiBaseUrl()}/rate/current`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to update current rate');
+    }
+    const updated = await res.json();
+    return {
+      ...updated,
+      rate: Number(updated.rate),
+    };
+  },
+
+  refreshRate: async (): Promise<ExchangeRate> => {
+    const res = await fetch(`${getApiBaseUrl()}/rate/update-rate`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      throw new Error('Failed to refresh rate');
+    }
+    const data = await res.json();
+    return {
+      ...data,
+      rate: Number(data.rate),
+    };
+  },
+
   createProduct: async (product: ProductCreate): Promise<Product> => {
-    const res = await fetch(`${API_BASE_URL}/products/`, {
+    const res = await fetch(`${getApiBaseUrl()}/products/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +126,7 @@ export const api = {
   },
 
   updateProduct: async (id: number, product: ProductUpdate): Promise<Product> => {
-    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+    const res = await fetch(`${getApiBaseUrl()}/products/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -84,7 +142,7 @@ export const api = {
   },
 
   deleteProduct: async (id: number): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+    const res = await fetch(`${getApiBaseUrl()}/products/${id}`, {
       method: 'DELETE',
     });
     

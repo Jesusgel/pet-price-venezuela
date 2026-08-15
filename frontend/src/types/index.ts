@@ -11,10 +11,23 @@ export interface Product {
 }
 
 export interface ExchangeRate {
+  id?: number;
   rate: number;
   rate_date: string;
   source: string;
   fetched_at: string;
+}
+
+export interface ExchangeRateUpdate {
+  rate: number;
+}
+
+export interface PaginatedRateResponse {
+  items: ExchangeRate[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
 }
 
 export interface ProductCreate {

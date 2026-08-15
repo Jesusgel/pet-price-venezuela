@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Epilogue, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { AppShell } from "@/components/AppShell";
 
 const epilogue = Epilogue({
   variable: "--font-display",
@@ -18,8 +19,8 @@ const workSans = Work_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "El Samán — Catálogo de Precios",
-  description: "Precios de alimentos para mascotas con tasa oficial BCV",
+  title: "El Samán — Panel de Control",
+  description: "Sistema de gestión de precios de alimentos de mascotas con tasa oficial BCV",
 };
 
 export default function RootLayout({
@@ -32,9 +33,11 @@ export default function RootLayout({
       lang="es"
       className={`${epilogue.variable} ${workSans.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-background text-foreground font-sans">
+      <body className="min-h-screen bg-background text-foreground font-sans">
         <Providers>
-          {children}
+          <AppShell>
+            {children}
+          </AppShell>
         </Providers>
       </body>
     </html>
