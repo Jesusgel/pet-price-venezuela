@@ -141,10 +141,15 @@ Estas convenciones son **no negociables** independientemente del dominio:
 - Mostrar las diferencias (diff) de los cambios propuestos.
 - **No modificar nada sin consentimiento explícito del usuario.**
 
-### 🧪 Calidad de Código
+### 🌿 Estrategia de Ramas & Git Workflow
+- **NUNCA** realizar cambios o commits directamente sobre la rama `main`.
+- Todo requerimiento nuevo o funcionalidad debe ser creado en su propia rama dedicada (ejemplo: `feat/<descripción-corta>`).
+
+### 🧪 Calidad de Código y Pruebas
 - Backend: todo el código debe pasar `ruff check` sin errores.
 - Frontend: todo el código debe pasar `eslint` sin errores.
 - No dejar `console.log` ni `print()` de debug en el código final.
+- **LUEGO DE REALIZAR CUALQUIER IMPLEMENTACIÓN**: Ejecutar obligatoriamente la suite de pruebas al final (`uv run pytest` en backend y `npm run test` en frontend) para verificar la integridad antes de finalizar.
 
 ### 🌐 Idioma
 - Código (variables, funciones, clases): **inglés**.
