@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 class ProductBase(BaseModel):
@@ -29,3 +29,10 @@ class ProductResponse(ProductBase):
     price_bs: Decimal
     created_at: datetime
     updated_at: datetime
+
+class PaginatedProductResponse(BaseModel):
+    items: List[ProductResponse]
+    total: int
+    page: int
+    limit: int
+    total_pages: int

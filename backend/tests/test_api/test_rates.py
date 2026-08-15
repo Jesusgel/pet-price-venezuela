@@ -16,11 +16,13 @@ async def seed_rate(db_session):
     )
 
 @pytest.mark.asyncio
-async def test_read_rate_not_found(client: AsyncClient):
-    # Ensure DB is empty
+async def test_read_rate_not_found(mocker, client: AsyncClient):
+    # Mock update_exchange_rate to raise error if no rate found in DB and DolarAPI fails
+    mocker.patch("app.services.dolar_service.DolarService.get_latest_rate", return_value=None)
+    mocker.patch("app.services.dolar_service.DolarService.update_exchange_rate", side_effect=Exception("API offline"))
+    
     response = await client.get("/api/v1/rate/")
-    assert response.status_code == 404
-    assert response.json()["detail"] == "No rate found in DB"
+    assert response.status_code == 503
 
 @pytest.mark.asyncio
 async def test_read_rate_success(client: AsyncClient, seed_rate):
@@ -32,9 +34,8 @@ async def test_read_rate_success(client: AsyncClient, seed_rate):
 
 @pytest.mark.asyncio
 async def test_update_rate(mocker, client: AsyncClient):
-    # Mock the internal service call to isolate internal dependency behavior from api response
-    # We patch the service so we don't need network hit
     mock_exchange_rate = ExchangeRate(
+        id=1,
         rate=Decimal("39.0"), 
         rate_date=date(2024, 4, 16), 
         source="dolarapi"
@@ -45,3 +46,20 @@ async def test_update_rate(mocker, client: AsyncClient):
     assert response.status_code == 200
     data = response.json()
     assert Decimal(data["rate"]) == Decimal("39.0")
+
+@pytest.mark.asyncio
+async def test_read_rate_history(client: AsyncClient, seed_rate):
+    response = await client.get("/api/v1/rate/history")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert data["total"] >= 1
+    assert Decimal(data["items"][0]["rate"]) == Decimal("38.5")
+
+@pytest.mark.asyncio
+async def test_update_current_rate(client: AsyncClient, seed_rate):
+    payload = {"rate": "42.50"}
+    response = await client.put("/api/v1/rate/current", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert Decimal(data["rate"]) == Decimal("42.50")

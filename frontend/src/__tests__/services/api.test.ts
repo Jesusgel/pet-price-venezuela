@@ -18,52 +18,65 @@ describe('api.getProducts', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('convierte price_usd, price_bs y weight_kg de string a number', async () => {
-    const raw = [
-      {
-        id: 1,
-        name: 'Pedigree',
-        price_usd: '12.50',
-        price_bs: '456.25',
-        weight_kg: '2.5',
-        category: 'perro',
-        brand: 'Pedigree',
-        unit: 'kg',
-        is_active: true,
-      },
-    ];
+    const raw = {
+      items: [
+        {
+          id: 1,
+          name: 'Pedigree',
+          price_usd: '12.50',
+          price_bs: '456.25',
+          weight_kg: '2.5',
+          category: 'perro',
+          brand: 'Pedigree',
+          unit: 'kg',
+          is_active: true,
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 20,
+      total_pages: 1,
+    };
     vi.spyOn(global, 'fetch').mockImplementation(mockFetch(raw));
 
     const result = await api.getProducts();
 
-    expect(result[0].price_usd).toBe(12.5);
-    expect(result[0].price_bs).toBe(456.25);
-    expect(result[0].weight_kg).toBe(2.5);
+    expect(result.items[0].price_usd).toBe(12.5);
+    expect(result.items[0].price_bs).toBe(456.25);
+    expect(result.items[0].weight_kg).toBe(2.5);
   });
 
   it('maneja price_bs y weight_kg null correctamente', async () => {
-    const raw = [
-      {
-        id: 2,
-        name: 'Whiskas',
-        price_usd: '8.00',
-        price_bs: null,
-        weight_kg: null,
-        category: 'gato',
-        brand: null,
-        unit: 'lata',
-        is_active: true,
-      },
-    ];
+    const raw = {
+      items: [
+        {
+          id: 2,
+          name: 'Whiskas',
+          price_usd: '8.00',
+          price_bs: null,
+          weight_kg: null,
+          category: 'gato',
+          brand: null,
+          unit: 'lata',
+          is_active: true,
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 20,
+      total_pages: 1,
+    };
     vi.spyOn(global, 'fetch').mockImplementation(mockFetch(raw));
 
     const result = await api.getProducts();
 
-    expect(result[0].price_bs).toBeNull();
-    expect(result[0].weight_kg).toBeNull();
+    expect(result.items[0].price_bs).toBeNull();
+    expect(result.items[0].weight_kg).toBeNull();
   });
 
   it('pasa search y category como query params', async () => {
-    vi.spyOn(global, 'fetch').mockImplementation(mockFetch([]));
+    const raw = { items: [], total: 0, page: 1, limit: 20, total_pages: 1 };
+    vi.spyOn(global, 'fetch').mockImplementation(mockFetch(raw));
 
     await api.getProducts('pedigree', 'perro');
 
