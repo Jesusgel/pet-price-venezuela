@@ -65,8 +65,8 @@ describe('ProductDetailModal', () => {
     // 15.50 USD
     expect(screen.getByText('$15.50')).toBeInTheDocument();
 
-    // 15.50 * 36.50 = 565.75 Bs
-    expect(screen.getByText(/565\.75/)).toBeInTheDocument();
+    // 15.50 * 36.50 = 565,75 Bs
+    expect(screen.getByText(/565,75/)).toBeInTheDocument();
   });
 
   it('muestra la tasa oficial y la fecha oficial formateada como DD/MM/YYYY', () => {
@@ -79,8 +79,8 @@ describe('ProductDetailModal', () => {
       />
     );
 
-    // Tasa
-    expect(screen.getByText('Bs. 36.50')).toBeInTheDocument();
+    // Tasa en formato VE
+    expect(screen.getByText('Bs. 36,50')).toBeInTheDocument();
 
     // Fecha: '2026-09-12' -> '12/09/2026'
     expect(screen.getByText('12/09/2026')).toBeInTheDocument();

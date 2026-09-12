@@ -3,6 +3,7 @@
 import { Product } from '@/types';
 import { motion } from 'framer-motion';
 import { Package, Pencil, Trash2 } from 'lucide-react';
+import { formatBs, formatUSD } from '@/utils/currency';
 
 interface ProductCardProps {
   product: Product;
@@ -86,7 +87,7 @@ export function ProductCard({ product, rate, onEdit, onDelete, onSelect }: Produ
           <div className="flex flex-col">
             <span className="text-xs font-medium text-muted-foreground">Precio USD</span>
             <span className="text-lg font-black text-primary">
-              ${Number(product.price_usd).toFixed(2)}
+              {formatUSD(product.price_usd)}
             </span>
           </div>
 
@@ -94,7 +95,7 @@ export function ProductCard({ product, rate, onEdit, onDelete, onSelect }: Produ
             <span className="text-xs font-medium text-muted-foreground">Precio BCV</span>
             {priceBs !== null ? (
               <span className="text-lg font-bold text-secondary">
-                Bs.&nbsp;{Number(priceBs).toFixed(2)}
+                {formatBs(priceBs)}
               </span>
             ) : (
               <span className="text-sm font-medium text-outline italic">

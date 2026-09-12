@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { Product, ExchangeRate } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, TrendingUp, Calendar, Tag, Layers, CheckCircle2 } from 'lucide-react';
+import { X, TrendingUp, Calendar, Tag, Layers, CheckCircle2, DollarSign } from 'lucide-react';
+import { formatBsNumber, formatUSD } from '@/utils/currency';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -47,7 +48,7 @@ export function ProductDetailModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
         {/* Backdrop con desenfoque */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -70,7 +71,7 @@ export function ProductDetailModal({
           aria-labelledby="product-detail-title"
         >
           {/* Header con botón de cerrar */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-2">
+          <div className="flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-2">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-surface-container text-on-surface-variant border border-border">
                 <Tag className="w-3.5 h-3.5 text-secondary" />
@@ -94,7 +95,7 @@ export function ProductDetailModal({
           </div>
 
           {/* Cuerpo principal */}
-          <div className="px-6 py-4 space-y-6">
+          <div className="px-5 sm:px-6 py-4 space-y-5">
             {/* Título y marca */}
             <div>
               {product.brand && (
@@ -104,78 +105,79 @@ export function ProductDetailModal({
               )}
               <h2
                 id="product-detail-title"
-                className="text-2xl font-bold text-primary font-display tracking-tight leading-snug"
+                className="text-xl sm:text-2xl font-bold text-primary font-display tracking-tight leading-snug"
               >
                 {product.name}
               </h2>
               <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground">
-                <Layers className="w-4 h-4 text-outline" />
+                <Layers className="w-4 h-4 text-outline shrink-0" />
                 <span>Presentación: <strong className="text-primary font-medium">{product.weight_kg ? `${product.weight_kg} kg` : product.unit}</strong></span>
               </div>
             </div>
 
-            {/* Tarjeta de Precios */}
-            <div className="bg-gradient-to-br from-surface-container-low via-surface-container to-surface-container-high rounded-2xl p-5 border border-border space-y-4">
-              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Precios y Conversión Oficial
+            {/* Tarjeta Destacada de Precio en Bolívares (Ancho Completo, Sin Desborde) */}
+            <div className="bg-gradient-to-br from-surface-container-low via-surface-container to-surface-container-high rounded-2xl p-4 sm:p-5 border border-secondary/20 shadow-xs">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-secondary">
+                  Precio en Bolívares
+                </span>
+                <span className="text-[11px] font-medium text-muted-foreground bg-white/90 px-2.5 py-0.5 rounded-full border border-border">
+                  Tasa Oficial BCV
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 divide-x divide-border">
-                {/* Precio USD */}
-                <div className="pr-2">
-                  <span className="text-xs font-semibold text-muted-foreground block mb-1">
-                    Precio en Dólares
+              {priceBs !== null ? (
+                <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                  <span className="text-xl sm:text-2xl font-bold text-secondary">
+                    Bs.
                   </span>
-                  <div className="text-2xl sm:text-3xl font-black text-primary font-display">
-                    ${Number(product.price_usd).toFixed(2)}
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">Moneda base (USD)</span>
+                  <span className="text-2xl sm:text-4xl font-extrabold text-secondary font-display tracking-tight break-all">
+                    {formatBsNumber(priceBs)}
+                  </span>
                 </div>
+              ) : (
+                <span className="text-base font-semibold text-error block">No disponible</span>
+              )}
 
-                {/* Precio Bs */}
-                <div className="pl-4">
-                  <span className="text-xs font-semibold text-muted-foreground block mb-1">
-                    Precio en Bolívares
-                  </span>
-                  {priceBs !== null ? (
-                    <div className="text-2xl sm:text-3xl font-extrabold text-secondary font-display">
-                      Bs.&nbsp;{Number(priceBs).toFixed(2)}
-                    </div>
-                  ) : (
-                    <span className="text-sm font-semibold text-error block">No disponible</span>
-                  )}
-                  <span className="text-[11px] text-muted-foreground">Al cambio oficial</span>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Calculado multiplicando el precio base en USD por la tasa oficial vigente.
+              </p>
+            </div>
+
+            {/* Grid Secundario: Precio USD y Tasa BCV */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Precio USD */}
+              <div className="bg-white rounded-xl p-3.5 border border-border shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                  <DollarSign className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span>Precio Base (USD)</span>
+                </div>
+                <div className="text-xl sm:text-2xl font-black text-primary font-display">
+                  {formatUSD(product.price_usd)}
                 </div>
               </div>
 
-              {/* Información de la Tasa BCV y Fecha */}
-              <div className="pt-3 border-t border-border flex flex-col gap-2 text-xs">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <TrendingUp className="w-4 h-4 text-secondary shrink-0" />
-                    Tasa Oficial BCV:
-                  </span>
-                  <span className="font-bold text-primary text-sm">
-                    {currentRate ? `Bs. ${Number(currentRate).toFixed(2)}` : 'N/D'}
-                  </span>
+              {/* Tasa Oficial BCV */}
+              <div className="bg-white rounded-xl p-3.5 border border-border shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-secondary shrink-0" />
+                  <span>Tasa Oficial BCV</span>
                 </div>
-
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Calendar className="w-4 h-4 text-secondary shrink-0" />
-                    Fecha del valor oficial:
-                  </span>
-                  <span className="font-semibold text-primary">
-                    {formattedRateDate}
-                  </span>
+                <div className="text-lg sm:text-xl font-bold text-primary font-display">
+                  {currentRate ? `Bs. ${formatBsNumber(currentRate)}` : 'N/D'}
                 </div>
-
-                {rateData?.source && (
-                  <div className="text-[11px] text-outline text-right mt-0.5">
-                    Fuente: Banco Central de Venezuela ({rateData.source})
-                  </div>
-                )}
               </div>
+            </div>
+
+            {/* Fila Informativa: Fecha de la Tasa Oficial */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-border text-xs gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                <Calendar className="w-4 h-4 text-secondary shrink-0" />
+                <span className="truncate">Fecha de la tasa oficial:</span>
+              </div>
+              <span className="font-bold text-primary bg-white px-2.5 py-1 rounded-md border border-border shadow-2xs shrink-0">
+                {formattedRateDate}
+              </span>
             </div>
           </div>
 

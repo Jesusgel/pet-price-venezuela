@@ -3,6 +3,7 @@
 import { Product } from '@/types';
 import { motion } from 'framer-motion';
 import { Package, Pencil, Trash2 } from 'lucide-react';
+import { formatBs, formatUSD } from '@/utils/currency';
 
 interface ProductRowProps {
   product: Product;
@@ -72,7 +73,7 @@ export function ProductRow({ product, rate, onEdit, onDelete, onSelect }: Produc
       <div className="flex-1 hidden sm:block text-right">
         <p className="text-xs text-muted-foreground font-medium mb-0.5">USD</p>
         <p className="text-sm font-black text-primary">
-          ${Number(product.price_usd).toFixed(2)}
+          {formatUSD(product.price_usd)}
         </p>
       </div>
 
@@ -81,7 +82,7 @@ export function ProductRow({ product, rate, onEdit, onDelete, onSelect }: Produc
         <p className="text-xs text-muted-foreground font-medium mb-0.5">BCV</p>
         {priceBs !== null ? (
           <p className="text-sm font-bold text-secondary">
-            Bs.&nbsp;{Number(priceBs).toFixed(2)}
+            {formatBs(priceBs)}
           </p>
         ) : (
           <p className="text-xs text-outline italic">No disp.</p>
