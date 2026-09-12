@@ -3,15 +3,17 @@
 import { Product } from '@/types';
 import { motion } from 'framer-motion';
 import { Package, Pencil, Trash2 } from 'lucide-react';
+import { formatBs, formatUSD } from '@/utils/currency';
 
 interface ProductCardProps {
   product: Product;
   rate: number | undefined;
   onEdit?: (product: Product) => void;
   onDelete?: (id: number) => void;
+  onSelect?: (product: Product) => void;
 }
 
-export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProps) {
+export function ProductCard({ product, rate, onEdit, onDelete, onSelect }: ProductCardProps) {
   // Usa price_bs de la API si está disponible; si no, calcula con el rate BCV
   const priceBs = product.price_bs || (rate ? product.price_usd * rate : null);
 
@@ -19,7 +21,18 @@ export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProp
     <motion.div
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-      className="group relative bg-white rounded-2xl p-5 card-shadow hover:card-shadow-hover border border-border hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full"
+      onClick={() => onSelect?.(product)}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onSelect(product);
+        }
+      }}
+      className={`group relative bg-white rounded-2xl p-5 card-shadow hover:card-shadow-hover border border-border hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full ${
+        onSelect ? 'cursor-pointer' : ''
+      }`}
     >
       {/* Badges + acciones */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
@@ -74,7 +87,7 @@ export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProp
           <div className="flex flex-col">
             <span className="text-xs font-medium text-muted-foreground">Precio USD</span>
             <span className="text-lg font-black text-primary">
-              ${Number(product.price_usd).toFixed(2)}
+              {formatUSD(product.price_usd)}
             </span>
           </div>
 
@@ -82,7 +95,7 @@ export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProp
             <span className="text-xs font-medium text-muted-foreground">Precio BCV</span>
             {priceBs !== null ? (
               <span className="text-lg font-bold text-secondary">
-                Bs.&nbsp;{Number(priceBs).toFixed(2)}
+                {formatBs(priceBs)}
               </span>
             ) : (
               <span className="text-sm font-medium text-outline italic">

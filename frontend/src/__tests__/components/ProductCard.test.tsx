@@ -73,15 +73,15 @@ describe('ProductCard — renderizado', () => {
 // ---------------------------------------------------------------------------
 describe('ProductCard — precio en Bs.', () => {
   it('calcula price_bs = price_usd * rate cuando product.price_bs es null', () => {
-    // 12.5 * 36.5 = 456.25
+    // 12.5 * 36.5 = 456.25 -> Bs. 456,25
     render(<ProductCard product={baseProduct} rate={36.5} />);
-    expect(screen.getByText('Bs. 456.25')).toBeInTheDocument();
+    expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
   });
 
   it('usa el price_bs de la API cuando está disponible (ignorando rate)', () => {
     const product = { ...baseProduct, price_bs: 500.0 };
     render(<ProductCard product={product} rate={36.5} />);
-    expect(screen.getByText('Bs. 500.00')).toBeInTheDocument();
+    expect(screen.getByText('Bs. 500,00')).toBeInTheDocument();
   });
 
   it('muestra "No disponible" cuando no hay rate ni price_bs', () => {

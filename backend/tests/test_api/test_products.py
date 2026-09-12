@@ -74,12 +74,36 @@ async def test_read_products_filter_search(client: AsyncClient, db_session):
     data = response.json()
     assert data["total"] == 1
     assert data["items"][0]["name"] == "Food Alpha"
-    
+
+    # Test case and accent insensitivity
+    # 1. Product without accent, query with accent and lowercase
+    response_accent1 = await client.get("/api/v1/products/?search=álpha")
+    assert response_accent1.status_code == 200
+    data_accent1 = response_accent1.json()
+    assert data_accent1["total"] == 1
+    assert data_accent1["items"][0]["name"] == "Food Alpha"
+
+    # 2. Add product with accents and mixed cases
+    p3 = Product(name="Alimento Nutrición Óptima", price_usd=Decimal("15.0"), category="Dog", unit="kg")
+    db_session.add(p3)
+    await db_session.commit()
+
+    # Query without accents and lowercase
+    response_accent2 = await client.get("/api/v1/products/?search=nutricion optima")
+    assert response_accent2.status_code == 200
+    data_accent2 = response_accent2.json()
+    assert data_accent2["total"] == 1
+    assert data_accent2["items"][0]["name"] == "Alimento Nutrición Óptima"
+
+    # Query with partial match and uppercase
+    response_accent3 = await client.get("/api/v1/products/?search=ALIMENTO")
+    assert response_accent3.status_code == 200
+    assert response_accent3.json()["total"] == 1
+
     response2 = await client.get("/api/v1/products/?category=Dog")
     assert response2.status_code == 200
     data2 = response2.json()
-    assert data2["total"] == 1
-    assert data2["items"][0]["name"] == "Treat Beta"
+    assert data2["total"] == 2
 
 
 @pytest.mark.asyncio

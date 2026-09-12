@@ -3,15 +3,17 @@
 import { Product } from '@/types';
 import { motion } from 'framer-motion';
 import { Package, Pencil, Trash2 } from 'lucide-react';
+import { formatBs, formatUSD } from '@/utils/currency';
 
 interface ProductRowProps {
   product: Product;
   rate: number | undefined;
   onEdit?: (product: Product) => void;
   onDelete?: (id: number) => void;
+  onSelect?: (product: Product) => void;
 }
 
-export function ProductRow({ product, rate, onEdit, onDelete }: ProductRowProps) {
+export function ProductRow({ product, rate, onEdit, onDelete, onSelect }: ProductRowProps) {
   const priceBs = product.price_bs || (rate ? product.price_usd * rate : null);
 
   return (
@@ -21,7 +23,18 @@ export function ProductRow({ product, rate, onEdit, onDelete }: ProductRowProps)
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="group flex items-center gap-4 px-4 py-3 bg-white rounded-xl border border-border hover:border-primary-fixed-dim hover:shadow-md card-shadow transition-all duration-200"
+      onClick={() => onSelect?.(product)}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onSelect(product);
+        }
+      }}
+      className={`group flex items-center gap-4 px-4 py-3 bg-white rounded-xl border border-border hover:border-primary-fixed-dim hover:shadow-md card-shadow transition-all duration-200 ${
+        onSelect ? 'cursor-pointer' : ''
+      }`}
     >
       {/* Icono de producto */}
       <div className="w-9 h-9 rounded-lg bg-surface-container-low border border-border flex items-center justify-center shrink-0">
@@ -60,7 +73,7 @@ export function ProductRow({ product, rate, onEdit, onDelete }: ProductRowProps)
       <div className="flex-1 hidden sm:block text-right">
         <p className="text-xs text-muted-foreground font-medium mb-0.5">USD</p>
         <p className="text-sm font-black text-primary">
-          ${Number(product.price_usd).toFixed(2)}
+          {formatUSD(product.price_usd)}
         </p>
       </div>
 
@@ -69,7 +82,7 @@ export function ProductRow({ product, rate, onEdit, onDelete }: ProductRowProps)
         <p className="text-xs text-muted-foreground font-medium mb-0.5">BCV</p>
         {priceBs !== null ? (
           <p className="text-sm font-bold text-secondary">
-            Bs.&nbsp;{Number(priceBs).toFixed(2)}
+            {formatBs(priceBs)}
           </p>
         ) : (
           <p className="text-xs text-outline italic">No disp.</p>
@@ -81,7 +94,10 @@ export function ProductRow({ product, rate, onEdit, onDelete }: ProductRowProps)
         {onEdit && (
           <button
             id={`edit-product-${product.id}`}
-            onClick={() => onEdit(product)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(product);
+            }}
             title="Editar"
             className="p-1.5 text-muted-foreground hover:text-secondary hover:bg-surface-container rounded-lg transition-all duration-150"
           >
@@ -91,7 +107,10 @@ export function ProductRow({ product, rate, onEdit, onDelete }: ProductRowProps)
         {onDelete && (
           <button
             id={`delete-product-${product.id}`}
-            onClick={() => onDelete(product.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(product.id);
+            }}
             title="Eliminar"
             className="p-1.5 text-muted-foreground hover:text-error hover:bg-error/5 rounded-lg transition-all duration-150"
           >
