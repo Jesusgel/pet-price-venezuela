@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -22,22 +22,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   const persister = useMemo(() => {
-    if (typeof window === 'undefined') return undefined;
     return createAsyncStoragePersister({
       storage: {
         getItem: async (key: string) => {
+          if (typeof window === 'undefined') return null;
           const value = await get(key);
           return value ?? null;
         },
-        setItem: (key: string, value: string) => set(key, value),
-        removeItem: (key: string) => del(key),
+        setItem: async (key: string, value: string) => {
+          if (typeof window === 'undefined') return;
+          await set(key, value);
+        },
+        removeItem: async (key: string) => {
+          if (typeof window === 'undefined') return;
+          await del(key);
+        },
       },
     });
   }, []);
-
-  if (!persister) {
-    return null;
-  }
 
   return (
     <PersistQueryClientProvider
