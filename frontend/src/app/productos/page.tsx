@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ProductModal } from '@/components/ProductModal';
+import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { toast } from 'react-hot-toast';
 import { Product, ProductCreate, ProductUpdate, SortField, SortOrder } from '@/types';
 import Link from 'next/link';
@@ -32,6 +33,7 @@ export default function ProductosPage() {
   const [sortKey, setSortKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { viewMode, setViewMode } = useViewMode();
   const isMobile = useIsMobile();
   const effectiveViewMode = isMobile ? 'list' : viewMode;
@@ -190,6 +192,7 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
+                onSelect={setSelectedProduct}
                 onEdit={isMobile ? undefined : handleEditProduct}
                 onDelete={isMobile ? undefined : handleDeleteProduct}
               />
@@ -216,6 +219,7 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
+                onSelect={setSelectedProduct}
                 onEdit={isMobile ? undefined : handleEditProduct}
                 onDelete={isMobile ? undefined : handleDeleteProduct}
               />
@@ -291,6 +295,14 @@ export default function ProductosPage() {
         initialData={editingProduct}
         title={editingProduct ? 'Editar Producto' : 'Añadir Producto'}
         isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Product Detail View Modal */}
+      <ProductDetailModal
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        product={selectedProduct}
+        rateData={rateData}
       />
     </main>
   );

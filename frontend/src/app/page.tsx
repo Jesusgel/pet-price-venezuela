@@ -1,18 +1,7 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  const isMobile = useIsMobile();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isMobile === undefined) return;
-    router.replace(isMobile ? '/productos' : '/dashboard');
-  }, [isMobile, router]);
-
-  return null;
+  redirect('/productos');
 }
+
 
