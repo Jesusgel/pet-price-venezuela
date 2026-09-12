@@ -16,13 +16,13 @@ router = APIRouter()
 @router.get("", response_model=ExchangeRateResponse)
 @router.get("/", response_model=ExchangeRateResponse)
 async def read_rate(dolar_service: DolarService = Depends(get_dolar_service)):
-    """Get the most recently fetched exchange rate, and update it if it's stale."""
+    """Get the most recently fetched exchange rate, and update it if it's stale and not manual."""
     latest = await dolar_service.get_latest_rate()
     
     needs_update = False
     if not latest:
         needs_update = True
-    else:
+    elif latest.source != "manual":
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         # Check if the rate was fetched more than 2 hours ago
         if latest.fetched_at < now - timedelta(hours=2):

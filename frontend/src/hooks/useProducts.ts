@@ -12,7 +12,8 @@ export function useProducts(
   return useQuery({
     queryKey: ['products', search, category, page, sortBy, sortOrder],
     queryFn: () => api.getProducts(search, category, page, 20, sortBy, sortOrder),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 30, // 30 segundos
+    refetchOnWindowFocus: true,
   });
 }
 
