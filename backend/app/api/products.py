@@ -7,6 +7,7 @@ from app.api.deps import get_product_service
 
 router = APIRouter()
 
+@router.get("", response_model=PaginatedProductResponse)
 @router.get("/", response_model=PaginatedProductResponse)
 async def read_products(
     search: Optional[str] = None,

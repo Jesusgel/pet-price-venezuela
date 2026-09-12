@@ -87,7 +87,7 @@ cp frontend/.env.example frontend/.env.local
 
 6. **Iniciar el servidor de desarrollo FastAPI:**
    ```bash
-   uv run uvicorn app.main:app --reload --port 8000
+   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
 - 🟢 **API:** [http://localhost:8000](http://localhost:8000)
@@ -177,7 +177,7 @@ npm run test:coverage
 #### 🖥️ Terminal 1 — Base de Datos + Backend
 ```powershell
 # Levantar base de datos, instalar dependencias, migrar e iniciar backend
-docker compose up -d ; cd backend ; uv sync ; uv run alembic upgrade head ; uv run uvicorn app.main:app --reload --port 8000
+docker compose up -d ; cd backend ; uv sync ; uv run alembic upgrade head ; uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 *(Si quieres cargar datos de prueba iniciales, puedes correr antes: `uv run python scripts/seed_data.py`)*
 
@@ -200,7 +200,7 @@ cd frontend ; npm install ; npm run dev
 
 #### 🖥️ Terminal 1 — Base de Datos + Backend
 ```bash
-docker compose up -d && cd backend && uv sync && uv run alembic upgrade head && uv run uvicorn app.main:app --reload --port 8000
+docker compose up -d && cd backend && uv sync && uv run alembic upgrade head && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 #### 🌐 Terminal 2 — Frontend

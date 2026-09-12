@@ -6,6 +6,7 @@ from app.api.deps import get_category_service
 
 router = APIRouter()
 
+@router.get("", response_model=List[CategoryResponse])
 @router.get("/", response_model=List[CategoryResponse])
 async def read_categories(
     category_service: CategoryService = Depends(get_category_service)

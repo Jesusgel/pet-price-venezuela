@@ -6,6 +6,7 @@ from app.api.deps import get_brand_service
 
 router = APIRouter()
 
+@router.get("", response_model=List[BrandResponse])
 @router.get("/", response_model=List[BrandResponse])
 async def read_brands(
     brand_service: BrandService = Depends(get_brand_service)

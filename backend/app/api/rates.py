@@ -13,6 +13,7 @@ from app.api.deps import get_dolar_service, get_rate_service
 router = APIRouter()
 
 
+@router.get("", response_model=ExchangeRateResponse)
 @router.get("/", response_model=ExchangeRateResponse)
 async def read_rate(dolar_service: DolarService = Depends(get_dolar_service)):
     """Get the most recently fetched exchange rate, and update it if it's stale."""
