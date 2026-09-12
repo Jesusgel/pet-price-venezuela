@@ -1,0 +1,42 @@
+# Documento de Especificación Técnica: Catálogo de Precios Dinámico (PWA)
+
+## 1. Contexto y Objetivo del Proyecto
+Se requiere desarrollar una aplicación móvil web (PWA) minimalista para la consulta rápida de precios en una tienda de alimentos para animales.
+
+* **Objetivo:** Consultar precios exactos en USD y su equivalente en Bolívares (Bs) según la tasa del día.
+* **Alcance:** Exclusivamente catálogo de consulta y actualización de tasa/productos. No manejará inventario, stock, contabilidad ni pasarelas de pago.
+* **Restricción Clave:** Infraestructura 100% gratuita (Cero Costo) y protegida contra abuso/escaneos automáticos.
+
+## 2. Stack Tecnológico y Despliegue ($0 Cost)
+* **Frontend:** Next.js (TypeScript) + Tailwind CSS + TanStack Query, desplegado en Vercel (Free Tier). Configurado como PWA para instalación directa en el móvil.
+* **Backend:** FastAPI (Python), desplegado en Render o Koyeb (Free Tier).
+* **Base de Datos:** PostgreSQL Serverless mediante Neon.tech o Supabase (Free Tier, sin necesidad de containers locales en producción).
+* **Defensa Perimetral:** Cloudflare (DNS + Proxy + WAF con Bot Fight Mode activado).
+
+## 3. Seguridad Requerida
+* **Acceso Público:** La búsqueda y lectura de precios es pública pero protegida por Rate Limiting (`SlowAPI` en FastAPI, ej. 60 peticiones/minuto por IP).
+* **Rutas Protegidas:** Los endpoints de mutación (actualizar tasa, crear/editar productos) requieren autenticación mediante JWT almacenado exclusivamente en cookies `HttpOnly` y `Secure`.
+* **CORS:** Configuración estricta en FastAPI permitiendo únicamente el dominio del frontend alojado en Vercel.
+* **Validación de Datos:** Esquemas de Pydantic estrictos para prevenir tipos de datos erróneos o números negativos.
+
+## 4. Modelo de Datos (PostgreSQL)
+
+### Tabla: tasa_cambio
+* `id`: SERIAL PRIMARY KEY
+* `monto`: DECIMAL(10, 2) NOT NULL
+* `fecha_actualizacion`: TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
+### Tabla: productos
+* `id`: SERIAL PRIMARY KEY
+* `nombre`: VARCHAR(120) NOT NULL (indexado para búsquedas rápidas)
+* `precio_usd`: DECIMAL(10, 2) NOT NULL
+* `activo`: BOOLEAN DEFAULT TRUE
+
+## 5. Instrucción para Antigravity / Asistente de IA
+Analiza el repositorio actual en el que estamos trabajando y responde:
+1. ¿Es factible limpiar/adaptar el código existente para dejar únicamente este flujo mínimo (productos + tasa) o es más rápido inicializar un template limpio con Next.js y FastAPI?
+2. Genera la estructura básica de FastAPI (`main.py`, modelos Pydantic y SQLAlchemy/asyncpg para Neon/Supabase) con Rate Limiting y CORS configurados.
+3. Define los endpoints mínimos:
+   - `GET /productos?q={search}`: Retorna lista filtrada de productos y la tasa actual.
+   - `PUT /tasa`: Actualiza el valor del dólar (requiere auth).
+   - `POST /productos`: Agrega un nuevo producto (requiere auth).

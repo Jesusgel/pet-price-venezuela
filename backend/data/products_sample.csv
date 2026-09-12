@@ -1,0 +1,8 @@
+name,price_usd,category,brand,unit,weight_kg,is_active
+"Dog Chow Adulto",12.50,perro,"Purina","bolsa",2.0,true
+"Cat Chow Gatos Castrados",10.00,gato,"Purina","bolsa",1.5,true
+"Pro Plan Puppy",25.00,perro,"Purina","bolsa",3.0,true
+"Gatsy Carne",8.50,gato,"Purina","bolsa",1.0,true
+"Rascador para Gatos",15.00,gato,"Genérico","unidad",,true
+"Hueso Nylabone Dura Chew",6.75,perro,"Nylabone","unidad",,true
+"Collar Antipulgas Seresto",30.00,perro,"Bayer","unidad",,true
