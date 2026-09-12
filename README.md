@@ -37,49 +37,82 @@ Asegúrate de tener instalado:
 
 ## 💻 Instalación y Ejecución Local
 
-### 1. Iniciar la Base de Datos
+### Paso 0: Configurar Variables de Entorno
 
-El proyecto incluye un archivo `docker-compose.yml` para levantar rápidamente una instancia de PostgreSQL en el entorno local.
+Antes de iniciar por primera vez, copia los archivos de ejemplo a sus respectivas ubicaciones:
 
-```bash
-docker-compose up -d
+```powershell
+# En Windows (PowerShell)
+Copy-Item backend\.env.example backend\.env
+Copy-Item frontend\.env.example frontend\.env.local
 ```
 
-### 2. Configurar y Ejecutar el Backend
+```bash
+# En Linux / macOS (Bash)
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+```
 
-1. Navega a la carpeta del backend:
+---
+
+### Paso 1: Terminal 1 — Base de Datos + Backend
+
+1. **Iniciar PostgreSQL con Docker:**
+   Desde la raíz del proyecto, levanta el contenedor de la base de datos:
+   ```bash
+   docker compose up -d
+   ```
+   *(Nota: Si usas una versión anterior de Docker, usa `docker-compose up -d`)*.
+
+2. **Navegar a la carpeta del backend:**
    ```bash
    cd backend
    ```
-2. Instala las dependencias usando `uv`:
+
+3. **Instalar dependencias de Python:**
    ```bash
    uv sync
    ```
-3. Ejecuta las migraciones para crear las tablas en la base de datos:
+
+4. **Aplicar migraciones de la base de datos:**
    ```bash
    uv run alembic upgrade head
    ```
-4. Inicia el servidor de desarrollo:
+
+5. **(Opcional) Cargar productos de prueba:**
+   Si es tu primera vez levantando la base de datos, ejecuta el script de seed para poblar el catálogo de muestra:
    ```bash
-   uv run uvicorn app.main:app --reload
+   uv run python scripts/seed_data.py
    ```
-El backend estará disponible en `http://localhost:8000`. Puedes acceder a la documentación interactiva de la API en `http://localhost:8000/docs`.
 
-### 3. Configurar y Ejecutar el Frontend
+6. **Iniciar el servidor de desarrollo FastAPI:**
+   ```bash
+   uv run uvicorn app.main:app --reload --port 8000
+   ```
 
-1. Abre una nueva terminal y navega a la carpeta del frontend:
+- 🟢 **API:** [http://localhost:8000](http://localhost:8000)
+- 📖 **Documentación Swagger:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+### Paso 2: Terminal 2 — Frontend (Next.js)
+
+1. **Abre una nueva terminal y navega al frontend:**
    ```bash
    cd frontend
    ```
-2. Instala las dependencias:
+
+2. **Instalar dependencias de Node.js:**
    ```bash
    npm install
    ```
-3. Inicia el servidor de desarrollo:
+
+3. **Iniciar el servidor de desarrollo:**
    ```bash
    npm run dev
    ```
-El frontend estará disponible en `http://localhost:3000`.
+
+- 🌐 **Aplicación Web:** [http://localhost:3000](http://localhost:3000)
 
 ## 🏗 Arquitectura del Proyecto
 
@@ -134,34 +167,46 @@ npm run test:coverage
 - **Backend**: Desplegado en Railway. Se manejan las variables de entorno (`DATABASE_URL`, etc.) desde el panel de Railway, y las migraciones se ejecutan automáticamente en el build o start.
 - **Frontend**: Desplegado en Vercel. La variable de entorno `NEXT_PUBLIC_API_URL` debe apuntar al dominio público del backend provisto por Railway.
 
-## ⚡ Inicio Rápido en PowerShell
+## ⚡ Inicio Rápido (Comandos Directos)
+
+### 🪟 En Windows (PowerShell)
 
 > [!IMPORTANT]
-> En PowerShell **no se puede usar `&&`** entre comandos. Usa `;` para ejecutar comandos secuenciales, o cópialos uno por uno.
+> En PowerShell **no se puede usar `&&`**. Usa `;` para encadenar comandos o ejecútalos línea por línea.
 
-### 🖥️ Terminal 1 — Base de Datos + Backend
-
+#### 🖥️ Terminal 1 — Base de Datos + Backend
 ```powershell
-# 1. Levantar PostgreSQL con Docker
-cls
+# Levantar base de datos, instalar dependencias, migrar e iniciar backend
+docker compose up -d ; cd backend ; uv sync ; uv run alembic upgrade head ; uv run uvicorn app.main:app --reload --port 8000
 ```
+*(Si quieres cargar datos de prueba iniciales, puedes correr antes: `uv run python scripts/seed_data.py`)*
 
-API disponible en: `http://localhost:8000`  
-Docs interactivos en: `http://localhost:8000/docs`
+- 🟢 API: `http://localhost:8000`
+- 📖 Swagger Docs: `http://localhost:8000/docs`
 
 ---
 
-### 🌐 Terminal 2 — Frontend
-
+#### 🌐 Terminal 2 — Frontend
 ```powershell
-# 1. Navegar a la carpeta del frontend e instalar dependencias
-cd frontend ; npm install
-
-# 2. Iniciar el servidor de desarrollo
-npm run dev
+# Instalar dependencias e iniciar Next.js
+cd frontend ; npm install ; npm run dev
 ```
 
-App disponible en: `http://localhost:3000`
+- 🌐 App: `http://localhost:3000`
+
+---
+
+### 🐧 / 🍎 En Linux / macOS (Bash)
+
+#### 🖥️ Terminal 1 — Base de Datos + Backend
+```bash
+docker compose up -d && cd backend && uv sync && uv run alembic upgrade head && uv run uvicorn app.main:app --reload --port 8000
+```
+
+#### 🌐 Terminal 2 — Frontend
+```bash
+cd frontend && npm install && npm run dev
+```
 
 ---
 
