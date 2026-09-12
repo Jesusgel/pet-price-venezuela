@@ -63,3 +63,10 @@ async def test_update_current_rate(client: AsyncClient, seed_rate):
     assert response.status_code == 200
     data = response.json()
     assert Decimal(data["rate"]) == Decimal("42.50")
+    assert data["source"] == "manual"
+
+    # GET /rate must return manual rate without trying to auto-update
+    get_res = await client.get("/api/v1/rate/")
+    assert get_res.status_code == 200
+    assert Decimal(get_res.json()["rate"]) == Decimal("42.50")
+    assert get_res.json()["source"] == "manual"

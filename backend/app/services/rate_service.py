@@ -9,6 +9,8 @@ from app.schemas.exchange_rate import (
 from app.repositories.rate_repository import ExchangeRateRepository
 
 
+from datetime import datetime, timezone
+
 class RateService:
     def __init__(self, rate_repo: ExchangeRateRepository):
         self.rate_repo = rate_repo
@@ -41,5 +43,7 @@ class RateService:
             )
 
         update_data = data.model_dump(exclude_unset=True)
+        update_data["fetched_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
+        update_data["source"] = "manual"
         updated = await self.rate_repo.update(latest, update_data)
         return ExchangeRateResponse.model_validate(updated, from_attributes=True)
