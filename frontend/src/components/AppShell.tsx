@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { Toaster } from 'react-hot-toast';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-background text-foreground font-sans">
       <Toaster position="top-center" />
+      <OfflineBanner />
       
       {/* Sidebar Navigation */}
       <Sidebar
