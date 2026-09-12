@@ -9,7 +9,7 @@ import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDele
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useViewMode } from '@/hooks/useViewMode';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ProductModal } from '@/components/ProductModal';
 import { ProductDetailModal } from '@/components/ProductDetailModal';
@@ -28,6 +28,7 @@ const SORT_OPTIONS: { label: string; field: SortField; order: SortOrder }[] = [
 
 export default function ProductosPage() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState(0);
@@ -43,10 +44,19 @@ export default function ProductosPage() {
     order: SORT_OPTIONS[sortKey].order,
   };
 
-  useEffect(() => { setPage(1); }, [search, category, sortKey]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, category, sortKey]);
 
   const { data: paginatedData, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts(
-    search,
+    debouncedSearch,
     category,
     page,
     sortBy,
@@ -134,13 +144,26 @@ export default function ProductosPage() {
           </div>
 
           <div className="flex w-full md:w-auto gap-3 flex-wrap">
-            <input
-              type="text"
-              placeholder="Buscar productos..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full md:w-52 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
-            />
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar productos..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline text-foreground"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-container transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
