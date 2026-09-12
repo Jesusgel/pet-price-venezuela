@@ -31,7 +31,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             width={36}
             height={36}
             className="object-contain"
-            style={{ height: 'auto' }}
+            style={{ width: 'auto', height: 'auto' }}
             priority
           />
           <div className="flex flex-col">
