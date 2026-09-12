@@ -8,6 +8,7 @@ import { ViewToggle } from '@/components/ViewToggle';
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useViewMode } from '@/hooks/useViewMode';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ProductModal } from '@/components/ProductModal';
@@ -32,6 +33,8 @@ export default function ProductosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { viewMode, setViewMode } = useViewMode();
+  const isMobile = useIsMobile();
+  const effectiveViewMode = isMobile ? 'list' : viewMode;
 
   const { field: sortBy, order: sortOrder } = {
     field: SORT_OPTIONS[sortKey].field,
@@ -97,7 +100,7 @@ export default function ProductosPage() {
   return (
     <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
+      <nav className="hidden md:flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
         <Link href="/dashboard" className="hover:text-primary transition-colors">
           Dashboard
         </Link>
@@ -106,8 +109,8 @@ export default function ProductosPage() {
       </nav>
 
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-        <div className="max-w-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 mb-6 md:mb-10">
+        <div className="hidden md:block max-w-2xl">
           <h1 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight mb-3 font-display">
             Catálogo de Productos
           </h1>
@@ -117,7 +120,7 @@ export default function ProductosPage() {
         </div>
 
         <div className="flex flex-col w-full md:w-auto gap-4 md:items-end">
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <button
               onClick={handleCreateProduct}
               className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
@@ -131,15 +134,15 @@ export default function ProductosPage() {
           <div className="flex w-full md:w-auto gap-3 flex-wrap">
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar productos..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 md:w-52 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
+              className="w-full md:w-52 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
             />
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
+              className="hidden md:block px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
             >
               <option value="">Todas las categorías</option>
               {categoriesList.map((cat) => (
@@ -151,7 +154,7 @@ export default function ProductosPage() {
             <select
               value={sortKey}
               onChange={(e) => setSortKey(Number(e.target.value))}
-              className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
+              className="hidden md:block px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
             >
               {SORT_OPTIONS.map((opt, i) => (
                 <option key={i} value={i}>{opt.label}</option>
@@ -167,7 +170,7 @@ export default function ProductosPage() {
           <p className="text-error font-semibold mb-1">Hubo un error al cargar los productos</p>
           <p className="text-error/80 text-sm">Asegúrate de que el backend esté en ejecución y reintenta.</p>
         </div>
-      ) : viewMode === 'grid' ? (
+      ) : effectiveViewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoadingProducts ? (
             Array.from({ length: 8 }).map((_, i) => (
@@ -187,8 +190,8 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
-                onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
+                onEdit={isMobile ? undefined : handleEditProduct}
+                onDelete={isMobile ? undefined : handleDeleteProduct}
               />
             ))
           )}
@@ -213,8 +216,8 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
-                onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
+                onEdit={isMobile ? undefined : handleEditProduct}
+                onDelete={isMobile ? undefined : handleDeleteProduct}
               />
             ))
           )}
