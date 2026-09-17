@@ -1,7 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { ExchangeRateUpdate } from '@/types';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
+
+/**
+ * Obtiene la fecha actual en la zona horaria de Venezuela (UTC-4) en formato YYYY-MM-DD.
+ */
+export function getVenezuelaDate(): string {
+  const now = new Date();
+  const vetOffsetMs = -4 * 60 * 60 * 1000;
+  const vetDate = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + vetOffsetMs);
+  return vetDate.toISOString().split('T')[0];
+}
 
 export function useExchangeRate() {
   const queryClient = useQueryClient();
@@ -16,18 +26,52 @@ export function useExchangeRate() {
   });
 
   const prevRateRef = useRef<number | undefined>(undefined);
+  const prevDateRef = useRef<string | undefined>(undefined);
 
+  // Invalida productos e historial si la tasa o la fecha cambian
   useEffect(() => {
     const newRate = query.data?.rate;
+    const newDate = query.data?.rate_date;
+
     if (newRate !== undefined) {
-      if (prevRateRef.current !== undefined && prevRateRef.current !== newRate) {
-        // La tasa cambió: invalidar productos e historial para recalcular precios en Bs
+      if (
+        prevRateRef.current !== undefined &&
+        (prevRateRef.current !== newRate || (prevDateRef.current && prevDateRef.current !== newDate))
+      ) {
+        // La tasa o fecha cambió: invalidar productos e historial para recalcular precios en Bs
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['rateHistory'] });
       }
       prevRateRef.current = newRate;
+      prevDateRef.current = newDate;
     }
-  }, [query.data?.rate, queryClient]);
+  }, [query.data?.rate, query.data?.rate_date, queryClient]);
+
+  // Detección proactiva de cambio de día al abrir la app o regresar a ella (PWA resume / window focus)
+  const checkDayChange = useCallback(() => {
+    const currentRateDate = query.data?.rate_date;
+    if (currentRateDate && currentRateDate < getVenezuelaDate()) {
+      query.refetch();
+    }
+  }, [query]);
+
+  useEffect(() => {
+    checkDayChange();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkDayChange();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', checkDayChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', checkDayChange);
+    };
+  }, [checkDayChange]);
 
   return query;
 }

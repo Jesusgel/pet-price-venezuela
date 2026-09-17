@@ -14,8 +14,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, rate, onEdit, onDelete, onSelect }: ProductCardProps) {
-  // Usa price_bs de la API si está disponible; si no, calcula con el rate BCV
-  const priceBs = product.price_bs || (rate ? product.price_usd * rate : null);
+  // Prioriza el cálculo dinámico con la tasa activa en memoria para recálculo instantáneo
+  const priceBs = rate ? Number((product.price_usd * rate).toFixed(2)) : (product.price_bs ?? null);
 
   return (
     <motion.div
