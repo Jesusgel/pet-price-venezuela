@@ -5,13 +5,14 @@ from datetime import date
 
 from app.models.exchange_rate import ExchangeRate
 from app.repositories.rate_repository import ExchangeRateRepository
+from app.services.dolar_service import get_today_in_venezuela
 
 @pytest.fixture
 async def seed_rate(db_session):
     repo = ExchangeRateRepository(db_session)
     return await repo.create(
         rate=Decimal("38.5"),
-        rate_date=date(2024, 4, 15),
+        rate_date=get_today_in_venezuela(),
         source="seeded"
     )
 
@@ -65,8 +66,53 @@ async def test_update_current_rate(client: AsyncClient, seed_rate):
     assert Decimal(data["rate"]) == Decimal("42.50")
     assert data["source"] == "manual"
 
-    # GET /rate must return manual rate without trying to auto-update
+    # GET /rate must return manual rate without trying to auto-update for today
     get_res = await client.get("/api/v1/rate/")
     assert get_res.status_code == 200
     assert Decimal(get_res.json()["rate"]) == Decimal("42.50")
     assert get_res.json()["source"] == "manual"
+
+@pytest.mark.asyncio
+async def test_read_rate_auto_syncs_on_past_date(mocker, client: AsyncClient, db_session):
+    repo = ExchangeRateRepository(db_session)
+    await repo.create(
+        rate=Decimal("30.0"),
+        rate_date=date(2020, 1, 1),
+        source="dolarapi"
+    )
+    mock_synced = ExchangeRate(
+        id=99,
+        rate=Decimal("50.0"),
+        rate_date=get_today_in_venezuela(),
+        source="dolarapi"
+    )
+    mock_update = mocker.patch("app.services.dolar_service.DolarService.update_exchange_rate", return_value=mock_synced)
+
+    response = await client.get("/api/v1/rate/")
+    assert response.status_code == 200
+    data = response.json()
+    assert Decimal(data["rate"]) == Decimal("50.0")
+    mock_update.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_read_rate_manual_superseded_on_past_date(mocker, client: AsyncClient, db_session):
+    repo = ExchangeRateRepository(db_session)
+    await repo.create(
+        rate=Decimal("30.0"),
+        rate_date=date(2020, 1, 1),
+        source="manual"
+    )
+    mock_synced = ExchangeRate(
+        id=100,
+        rate=Decimal("55.0"),
+        rate_date=get_today_in_venezuela(),
+        source="dolarapi"
+    )
+    mock_update = mocker.patch("app.services.dolar_service.DolarService.update_exchange_rate", return_value=mock_synced)
+
+    response = await client.get("/api/v1/rate/")
+    assert response.status_code == 200
+    data = response.json()
+    assert Decimal(data["rate"]) == Decimal("55.0")
+    assert data["source"] == "dolarapi"
+    mock_update.assert_called_once()

@@ -78,9 +78,15 @@ describe('ProductCard — precio en Bs.', () => {
     expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
   });
 
-  it('usa el price_bs de la API cuando está disponible (ignorando rate)', () => {
+  it('prioriza la tasa activa rate para calcular price_bs reactivamente', () => {
     const product = { ...baseProduct, price_bs: 500.0 };
     render(<ProductCard product={product} rate={36.5} />);
+    expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
+  });
+
+  it('usa el price_bs de la API como fallback cuando rate es undefined', () => {
+    const product = { ...baseProduct, price_bs: 500.0 };
+    render(<ProductCard product={product} rate={undefined} />);
     expect(screen.getByText('Bs. 500,00')).toBeInTheDocument();
   });
 

@@ -1,5 +1,4 @@
-from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.schemas.exchange_rate import (
     ExchangeRateResponse,
@@ -16,33 +15,14 @@ router = APIRouter()
 @router.get("", response_model=ExchangeRateResponse)
 @router.get("/", response_model=ExchangeRateResponse)
 async def read_rate(dolar_service: DolarService = Depends(get_dolar_service)):
-    """Get the most recently fetched exchange rate, and update it if it's stale and not manual."""
-    latest = await dolar_service.get_latest_rate()
-    
-    needs_update = False
-    if not latest:
-        needs_update = True
-    elif latest.source != "manual":
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        # Check if the rate was fetched more than 2 hours ago
-        if latest.fetched_at < now - timedelta(hours=2):
-            needs_update = True
-            
-    if needs_update:
-        try:
-            return await dolar_service.update_exchange_rate()
-        except Exception:
-            if latest:
-                return latest
-            raise HTTPException(status_code=503, detail="Service Unavailable: cannot fetch current exchange rate.")
-            
-    return latest
+    """Obtiene la tasa de cambio vigente, sincronizándola automáticamente si es un nuevo día o está vencida."""
+    return await dolar_service.get_or_sync_latest_rate()
 
 
 @router.post("/update-rate", response_model=ExchangeRateResponse)
 async def refresh_rate(dolar_service: DolarService = Depends(get_dolar_service)):
-    """Fetch from DolarAPI and update DB if needed."""
-    return await dolar_service.update_exchange_rate()
+    """Fuerza la consulta a DolarAPI y actualiza la tasa en base de datos."""
+    return await dolar_service.update_exchange_rate(force=True)
 
 
 @router.get("/history", response_model=PaginatedExchangeRateResponse)
