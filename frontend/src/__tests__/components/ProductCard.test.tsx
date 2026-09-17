@@ -66,6 +66,29 @@ describe('ProductCard — renderizado', () => {
     render(<ProductCard product={product} rate={undefined} />);
     expect(screen.getByText('lata')).toBeInTheDocument();
   });
+
+  it('muestra el emoji de perro para productos de categoría perro', () => {
+    render(<ProductCard product={baseProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐶').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji de gato para productos de categoría gato', () => {
+    const catProduct = { ...baseProduct, category: 'gato' };
+    render(<ProductCard product={catProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐱').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji de ganado para productos de categoría ganado', () => {
+    const cowProduct = { ...baseProduct, category: 'ganado' };
+    render(<ProductCard product={cowProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐮').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji genérico para otras categorías', () => {
+    const otherProduct = { ...baseProduct, category: 'accesorios' };
+    render(<ProductCard product={otherProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐾').length).toBeGreaterThan(0);
+  });
 });
 
 // ---------------------------------------------------------------------------

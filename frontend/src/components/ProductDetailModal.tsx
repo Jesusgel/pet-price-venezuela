@@ -5,6 +5,7 @@ import { Product, ExchangeRate } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, TrendingUp, Calendar, Tag, Layers, CheckCircle2, DollarSign } from 'lucide-react';
 import { formatBsNumber, formatUSD } from '@/utils/currency';
+import { getCategoryVisual } from '@/utils/categoryVisuals';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export function ProductDetailModal({
 
   const currentRate = rateData?.rate;
   const priceBs = product.price_bs || (currentRate ? product.price_usd * currentRate : null);
+  const visual = getCategoryVisual(product.category);
 
   // Formatear fecha de la tasa oficial DD/MM/YYYY
   const formattedRateDate = rateData?.rate_date
@@ -73,9 +75,13 @@ export function ProductDetailModal({
           {/* Header con botón de cerrar */}
           <div className="flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-surface-container text-on-surface-variant border border-border">
-                <Tag className="w-3.5 h-3.5 text-secondary" />
-                {product.category}
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shadow-xs ${visual.badgeClass}`}
+              >
+                <span className="text-sm leading-none" role="img" aria-label={visual.label}>
+                  {visual.emoji}
+                </span>
+                <span>{product.category}</span>
               </span>
               {product.is_active && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
