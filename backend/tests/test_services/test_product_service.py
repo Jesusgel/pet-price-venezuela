@@ -32,7 +32,7 @@ def product_service(db_session):
 async def test_get_products_with_ves_price(mocker, product_service, seed_products):
     # Provide a mock exchange rate
     mock_rate = ExchangeRate(rate=Decimal("40.0"), rate_date=date(2024, 4, 15), source="test")
-    mocker.patch.object(product_service.dolar_service, "get_latest_rate", return_value=mock_rate)
+    mocker.patch.object(product_service.dolar_service, "get_or_sync_latest_rate", return_value=mock_rate)
     
     products = await product_service.get_products_with_ves_price()
     
@@ -47,7 +47,7 @@ async def test_get_products_with_ves_price(mocker, product_service, seed_product
 @pytest.mark.asyncio
 async def test_get_products_with_ves_price_no_rate_throws_503(mocker, product_service):
     # Mock no exchange rate available
-    mocker.patch.object(product_service.dolar_service, "get_latest_rate", return_value=None)
+    mocker.patch.object(product_service.dolar_service, "get_or_sync_latest_rate", return_value=None)
     
     with pytest.raises(HTTPException) as exc:
         await product_service.get_products_with_ves_price()

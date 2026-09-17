@@ -10,6 +10,7 @@ from app.repositories.rate_repository import ExchangeRateRepository
 
 
 from datetime import datetime, timezone
+from app.services.dolar_service import get_today_in_venezuela
 
 class RateService:
     def __init__(self, rate_repo: ExchangeRateRepository):
@@ -45,5 +46,6 @@ class RateService:
         update_data = data.model_dump(exclude_unset=True)
         update_data["fetched_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
         update_data["source"] = "manual"
+        update_data["rate_date"] = get_today_in_venezuela()
         updated = await self.rate_repo.update(latest, update_data)
         return ExchangeRateResponse.model_validate(updated, from_attributes=True)
