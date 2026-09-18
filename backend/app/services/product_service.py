@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional
+from typing import Optional
 from fastapi import HTTPException
 
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate, PaginatedProductResponse
@@ -25,7 +25,7 @@ class ProductService:
         Retrieves a paginated, sorted page of products and calculates their price in VES
         using the latest exchange rate.
         """
-        latest_rate = await self.dolar_service.get_latest_rate()
+        latest_rate = await self.dolar_service.get_or_sync_latest_rate()
         if not latest_rate:
             raise HTTPException(status_code=503, detail="Exchange rate not available")
 
@@ -50,7 +50,7 @@ class ProductService:
         )
 
     async def get_product_by_id_with_ves_price(self, product_id: int) -> ProductResponse:
-        latest_rate = await self.dolar_service.get_latest_rate()
+        latest_rate = await self.dolar_service.get_or_sync_latest_rate()
         if not latest_rate:
             raise HTTPException(status_code=503, detail="Exchange rate not available")
             
@@ -63,7 +63,7 @@ class ProductService:
         return ProductResponse(**prod_dict)
 
     async def create_product(self, product_in: ProductCreate) -> ProductResponse:
-        latest_rate = await self.dolar_service.get_latest_rate()
+        latest_rate = await self.dolar_service.get_or_sync_latest_rate()
         if not latest_rate:
             raise HTTPException(status_code=503, detail="Exchange rate not available")
             
@@ -75,7 +75,7 @@ class ProductService:
         return ProductResponse(**prod_dict)
 
     async def update_product(self, product_id: int, product_in: ProductUpdate) -> ProductResponse:
-        latest_rate = await self.dolar_service.get_latest_rate()
+        latest_rate = await self.dolar_service.get_or_sync_latest_rate()
         if not latest_rate:
             raise HTTPException(status_code=503, detail="Exchange rate not available")
             

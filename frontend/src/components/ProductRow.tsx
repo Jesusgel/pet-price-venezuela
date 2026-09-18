@@ -2,8 +2,9 @@
 
 import { Product } from '@/types';
 import { motion } from 'framer-motion';
-import { Package, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { formatBs, formatUSD } from '@/utils/currency';
+import { getCategoryVisual } from '@/utils/categoryVisuals';
 
 interface ProductRowProps {
   product: Product;
@@ -14,7 +15,9 @@ interface ProductRowProps {
 }
 
 export function ProductRow({ product, rate, onEdit, onDelete, onSelect }: ProductRowProps) {
-  const priceBs = product.price_bs || (rate ? product.price_usd * rate : null);
+  // Prioriza el cálculo dinámico con la tasa activa en memoria para recálculo instantáneo
+  const priceBs = rate ? Number((product.price_usd * rate).toFixed(2)) : (product.price_bs ?? null);
+  const visual = getCategoryVisual(product.category);
 
   return (
     <motion.div
@@ -36,9 +39,17 @@ export function ProductRow({ product, rate, onEdit, onDelete, onSelect }: Produc
         onSelect ? 'cursor-pointer' : ''
       }`}
     >
-      {/* Icono de producto */}
-      <div className="w-9 h-9 rounded-lg bg-surface-container-low border border-border flex items-center justify-center shrink-0">
-        <Package className="w-5 h-5 text-surface-dim group-hover:text-secondary transition-colors duration-300" />
+      {/* Icono de categoría ultraligero */}
+      <div
+        className={`w-9 h-9 rounded-lg bg-gradient-to-br ${visual.bgGradient} border ${visual.borderColor} flex items-center justify-center shrink-0 transition-colors duration-200`}
+      >
+        <span
+          role="img"
+          aria-label={visual.label}
+          className="text-lg select-none group-hover:scale-110 transition-transform duration-200"
+        >
+          {visual.emoji}
+        </span>
       </div>
 
       {/* Nombre + unidad (columna principal) */}
@@ -64,8 +75,13 @@ export function ProductRow({ product, rate, onEdit, onDelete, onSelect }: Produc
 
       {/* Categoría */}
       <div className="flex-1 hidden lg:flex items-center">
-        <span className="inline-block bg-surface-container text-on-surface-variant text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wide border border-border truncate max-w-full">
-          {product.category}
+        <span
+          className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wide border truncate max-w-full ${visual.badgeClass}`}
+        >
+          <span className="text-xs leading-none" role="img" aria-label={visual.label}>
+            {visual.emoji}
+          </span>
+          <span className="truncate">{product.category}</span>
         </span>
       </div>
 

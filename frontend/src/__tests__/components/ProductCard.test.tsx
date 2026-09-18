@@ -66,6 +66,29 @@ describe('ProductCard — renderizado', () => {
     render(<ProductCard product={product} rate={undefined} />);
     expect(screen.getByText('lata')).toBeInTheDocument();
   });
+
+  it('muestra el emoji de perro para productos de categoría perro', () => {
+    render(<ProductCard product={baseProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐶').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji de gato para productos de categoría gato', () => {
+    const catProduct = { ...baseProduct, category: 'gato' };
+    render(<ProductCard product={catProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐱').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji de ganado para productos de categoría ganado', () => {
+    const cowProduct = { ...baseProduct, category: 'ganado' };
+    render(<ProductCard product={cowProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐮').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji genérico para otras categorías', () => {
+    const otherProduct = { ...baseProduct, category: 'accesorios' };
+    render(<ProductCard product={otherProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐾').length).toBeGreaterThan(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -78,9 +101,15 @@ describe('ProductCard — precio en Bs.', () => {
     expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
   });
 
-  it('usa el price_bs de la API cuando está disponible (ignorando rate)', () => {
+  it('prioriza la tasa activa rate para calcular price_bs reactivamente', () => {
     const product = { ...baseProduct, price_bs: 500.0 };
     render(<ProductCard product={product} rate={36.5} />);
+    expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
+  });
+
+  it('usa el price_bs de la API como fallback cuando rate es undefined', () => {
+    const product = { ...baseProduct, price_bs: 500.0 };
+    render(<ProductCard product={product} rate={undefined} />);
     expect(screen.getByText('Bs. 500,00')).toBeInTheDocument();
   });
 

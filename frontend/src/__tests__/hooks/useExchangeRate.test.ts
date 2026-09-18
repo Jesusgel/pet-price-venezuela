@@ -10,7 +10,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 import { api } from '@/services/api';
-import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useExchangeRate, getVenezuelaDate } from '@/hooks/useExchangeRate';
 import { ExchangeRate } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +39,11 @@ function createWrapper(client: QueryClient) {
 // ---------------------------------------------------------------------------
 describe('useExchangeRate', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('retorna la fecha en formato YYYY-MM-DD con getVenezuelaDate', () => {
+    const vetDate = getVenezuelaDate();
+    expect(vetDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 
   it('retorna los datos de la tasa BCV cuando la API responde correctamente', async () => {
     vi.mocked(api.getExchangeRate).mockResolvedValue(mockRate);
@@ -90,6 +95,29 @@ describe('useExchangeRate', () => {
     await waitFor(() => {
       const cachedData = client.getQueryData<ExchangeRate>(['exchangeRate']);
       expect(cachedData?.rate).toBe(36.5);
+    });
+  });
+
+  it('invalida queries de products si la tasa cambia', async () => {
+    vi.mocked(api.getExchangeRate).mockResolvedValue(mockRate);
+    const client = createTestQueryClient();
+    const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
+
+    const { rerender } = renderHook(() => useExchangeRate(), { wrapper: createWrapper(client) });
+
+    await waitFor(() => {
+      expect(client.getQueryData(['exchangeRate'])).toBeDefined();
+    });
+
+    // Simular que la tasa cambia a un nuevo valor
+    const updatedRate = { ...mockRate, rate: 38.0 };
+    vi.mocked(api.getExchangeRate).mockResolvedValue(updatedRate);
+    client.setQueryData(['exchangeRate'], updatedRate);
+
+    rerender();
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['products'] });
     });
   });
 });
