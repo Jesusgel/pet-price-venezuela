@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import products, rates, categories, brands
+from app.api import auth, products, rates, categories, brands
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -22,16 +22,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Setup - Allow local network IPs & localhost
+# CORS Setup - Seguro con orígenes configurados en settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https?://.*",
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(products.router, prefix=f"{settings.API_V1_STR}/products", tags=["products"])
 app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["categories"])
 app.include_router(brands.router, prefix=f"{settings.API_V1_STR}/brands", tags=["brands"])
