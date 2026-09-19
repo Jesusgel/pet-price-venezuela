@@ -16,6 +16,7 @@ import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { toast } from 'react-hot-toast';
 import { Product, ProductCreate, ProductUpdate, SortField, SortOrder } from '@/types';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 const SORT_OPTIONS: { label: string; field: SortField; order: SortOrder }[] = [
   { label: 'Nombre A→Z',    field: 'name',       order: 'asc'  },
@@ -27,6 +28,7 @@ const SORT_OPTIONS: { label: string; field: SortField; order: SortOrder }[] = [
 ];
 
 export default function ProductosPage() {
+  const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -133,13 +135,15 @@ export default function ProductosPage() {
 
         <div className="flex flex-col w-full md:w-auto gap-4 md:items-end">
           <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={handleCreateProduct}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              Añadir Producto
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleCreateProduct}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                <Plus className="w-5 h-5" />
+                Añadir Producto
+              </button>
+            )}
             <ViewToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
 
@@ -216,8 +220,8 @@ export default function ProductosPage() {
                 product={product}
                 rate={rateData?.rate}
                 onSelect={setSelectedProduct}
-                onEdit={isMobile ? undefined : handleEditProduct}
-                onDelete={isMobile ? undefined : handleDeleteProduct}
+                onEdit={isAdmin && !isMobile ? handleEditProduct : undefined}
+                onDelete={isAdmin && !isMobile ? handleDeleteProduct : undefined}
               />
             ))
           )}
@@ -243,8 +247,8 @@ export default function ProductosPage() {
                 product={product}
                 rate={rateData?.rate}
                 onSelect={setSelectedProduct}
-                onEdit={isMobile ? undefined : handleEditProduct}
-                onDelete={isMobile ? undefined : handleDeleteProduct}
+                onEdit={isAdmin && !isMobile ? handleEditProduct : undefined}
+                onDelete={isAdmin && !isMobile ? handleDeleteProduct : undefined}
               />
             ))
           )}
