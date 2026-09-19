@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import { ExchangeRateUpdate } from '@/types';
+import { ExchangeRate, ExchangeRateUpdate } from '@/types';
 import { useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -27,6 +27,8 @@ export function useExchangeRate() {
 
   const prevRateRef = useRef<number | undefined>(undefined);
   const prevDateRef = useRef<string | undefined>(undefined);
+  const lastDayCheckRef = useRef<number>(0);
+  const DAY_CHECK_COOLDOWN_MS = 1000 * 60 * 5; // 5 minutos entre chequeos proactivos
 
   // Invalida productos e historial si la tasa o la fecha cambian
   useEffect(() => {
@@ -49,11 +51,17 @@ export function useExchangeRate() {
 
   // Detección proactiva de cambio de día al abrir la app o regresar a ella (PWA resume / window focus)
   const checkDayChange = useCallback(() => {
-    const currentRateDate = query.data?.rate_date;
-    if (currentRateDate && currentRateDate < getVenezuelaDate()) {
-      query.refetch();
+    const now = Date.now();
+    if (now - lastDayCheckRef.current < DAY_CHECK_COOLDOWN_MS) {
+      return;
     }
-  }, [query]);
+    const currentRateData = queryClient.getQueryData<ExchangeRate>(['exchangeRate']);
+    const currentRateDate = currentRateData?.rate_date;
+    if (currentRateDate && currentRateDate < getVenezuelaDate()) {
+      lastDayCheckRef.current = now;
+      queryClient.invalidateQueries({ queryKey: ['exchangeRate'] });
+    }
+  }, [queryClient]);
 
   useEffect(() => {
     checkDayChange();
