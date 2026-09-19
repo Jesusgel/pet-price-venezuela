@@ -1,14 +1,24 @@
 import { Product, ExchangeRate, ProductCreate, ProductUpdate, PaginatedResponse, ExchangeRateUpdate, PaginatedRateResponse, Category, CategoryCreate, Brand, BrandCreate } from '@/types';
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   if (typeof window !== 'undefined') {
+    const isHttps = window.location.protocol === 'https:';
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+    if (isHttps && !isLocalhost) {
+      console.warn(
+        '[API] NEXT_PUBLIC_API_URL no está configurada en un entorno HTTPS. Evitando conexión insegura HTTP.'
+      );
+      return `${window.location.origin}/api/v1`;
+    }
     return `http://${window.location.hostname}:8000/api/v1`;
   }
   return 'http://localhost:8000/api/v1';
 };
+
 
 export const api = {
   getProducts: async (

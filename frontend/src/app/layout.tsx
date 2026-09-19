@@ -1,9 +1,10 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Epilogue, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 
 const epilogue = Epilogue({
   variable: "--font-display",
@@ -54,7 +55,9 @@ export default function RootLayout({
             {children}
           </AppShell>
         </Providers>
+        <PWAUpdatePrompt />
       </body>
+
     </html>
   );
 }

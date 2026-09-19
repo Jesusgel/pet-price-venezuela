@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { api } from '@/services/api';
+import { api, getApiBaseUrl } from '@/services/api';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -193,3 +193,62 @@ describe('api.deleteProduct', () => {
     await expect(api.deleteProduct(99)).rejects.toThrow('Failed to delete product');
   });
 });
+
+// ---------------------------------------------------------------------------
+// getApiBaseUrl
+// ---------------------------------------------------------------------------
+describe('getApiBaseUrl', () => {
+  const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+  const originalWindow = global.window;
+
+  beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_API_URL;
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_API_URL = originalEnv;
+    if (originalWindow !== undefined) {
+      global.window = originalWindow;
+    }
+    vi.restoreAllMocks();
+  });
+
+  it('retorna NEXT_PUBLIC_API_URL si está definida', () => {
+    process.env.NEXT_PUBLIC_API_URL = 'https://custom-backend.railway.app/api/v1';
+    expect(getApiBaseUrl()).toBe('https://custom-backend.railway.app/api/v1');
+  });
+
+  it('retorna localhost:8000 en entorno de desarrollo local', () => {
+    // En Vitest / jsdom window.location.hostname suele ser localhost
+    expect(getApiBaseUrl()).toBe('http://localhost:8000/api/v1');
+  });
+
+  it('previene mixed content en HTTPS remoto y retorna origen seguro con advertencia', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Simular HTTPS en dominio remoto (ej. Vercel)
+    const mockLocation = {
+      protocol: 'https:',
+      hostname: 'pwa-pet-price-qa.vercel.app',
+      origin: 'https://pwa-pet-price-qa.vercel.app',
+    };
+
+    vi.stubGlobal('window', {
+      ...global.window,
+      location: mockLocation,
+    });
+
+    const result = getApiBaseUrl();
+
+    expect(result).toBe('https://pwa-pet-price-qa.vercel.app/api/v1');
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('NEXT_PUBLIC_API_URL no está configurada en un entorno HTTPS')
+    );
+  });
+
+  it('retorna http://localhost:8000/api/v1 en SSR cuando window es undefined', () => {
+    vi.stubGlobal('window', undefined);
+    expect(getApiBaseUrl()).toBe('http://localhost:8000/api/v1');
+  });
+});
+
