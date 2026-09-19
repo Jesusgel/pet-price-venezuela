@@ -54,13 +54,11 @@ ${bgRect}  <image href="data:image/png;base64,${base64}" x="${offset}" y="${offs
     console.log(`Generated SVG: ${outputPath}`);
   }
 
-  // PWA PNG icons (transparent background, only logo contour visible)
+  // All PWA icons transparent (only logo contour visible)
   await makePNG(192, 172, join(outputIconsDir, 'icon-192x192.png'), transparentBg);
   await makePNG(512, 460, join(outputIconsDir, 'icon-512x512.png'), transparentBg);
   await makePNG(180, 160, join(outputIconsDir, 'apple-touch-icon.png'), transparentBg);
-
-  // Maskable icon requires solid background per PWA spec
-  await makePNG(512, 360, join(outputIconsDir, 'icon-maskable-512x512.png'), solidBg);
+  await makePNG(512, 460, join(outputIconsDir, 'icon-maskable-512x512.png'), transparentBg);
 
   // Next.js static app icons (transparent background for browser tabs)
   await makePNG(48, 44, join(appDir, 'icon.png'), transparentBg);
@@ -70,7 +68,31 @@ ${bgRect}  <image href="data:image/png;base64,${base64}" x="${offset}" y="${offs
   await makeSVG(192, 172, join(outputIconsDir, 'icon-192x192.svg'), false);
   await makeSVG(512, 460, join(outputIconsDir, 'icon-512x512.svg'), false);
   await makeSVG(180, 160, join(outputIconsDir, 'apple-touch-icon.svg'), false);
-  await makeSVG(512, 360, join(outputIconsDir, 'icon-maskable-512x512.svg'), true);
+  await makeSVG(512, 460, join(outputIconsDir, 'icon-maskable-512x512.svg'), false);
+
+  // Transparent favicon.ico
+  const png32 = await sharp(trimmedBuffer)
+    .resize(32, 32, { fit: 'contain', background: transparentBg })
+    .png()
+    .toBuffer();
+
+  const icoHeader = Buffer.alloc(22);
+  icoHeader.writeUInt16LE(0, 0);
+  icoHeader.writeUInt16LE(1, 2);
+  icoHeader.writeUInt16LE(1, 4);
+  icoHeader.writeUInt8(32, 6);
+  icoHeader.writeUInt8(32, 7);
+  icoHeader.writeUInt8(0, 8);
+  icoHeader.writeUInt8(0, 9);
+  icoHeader.writeUInt16LE(1, 10);
+  icoHeader.writeUInt16LE(32, 12);
+  icoHeader.writeUInt32LE(png32.length, 14);
+  icoHeader.writeUInt32LE(22, 18);
+
+  const ico = Buffer.concat([icoHeader, png32]);
+  writeFileSync(join(appDir, 'favicon.ico'), ico);
+  writeFileSync(join(process.cwd(), 'public', 'favicon.ico'), ico);
+  console.log('Generated ICO: favicon.ico');
 }
 
 run().catch((err) => {
