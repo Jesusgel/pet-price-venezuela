@@ -12,49 +12,72 @@ const DEFAULT_PROPS = {
   productName: 'Cat Chow 1.5kg',
 };
 
-describe('WeightPriceCalculator (REQ-012 / REQ-013)', () => {
-  it('renderiza el título, el input, los modos y los botones preset', () => {
+describe('WeightPriceCalculator (REQ-012 / REQ-013 — Saco por unidad / Detal por peso)', () => {
+  it('en modo Saco inicial muestra input de cantidad sin botones rápidos', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
 
     expect(screen.getByText('Calculadora de Precio')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Escribe el peso deseado')).toBeInTheDocument();
-    expect(screen.getByText('250g')).toBeInTheDocument();
-    expect(screen.getByText('500g')).toBeInTheDocument();
-    expect(screen.getByText('1 kg')).toBeInTheDocument();
-    expect(screen.getByText('2 kg')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Escribe la cantidad de sacos (ej: 1, 2...)')).toBeInTheDocument();
+    expect(screen.getByText('saco(s)')).toBeInTheDocument();
 
-    // Modos de precio configurados
+    // No debe haber botones rápidos de gramos para sacos
+    expect(screen.queryByText('250g')).toBeNull();
+    expect(screen.queryByText('500g')).toBeNull();
+
+    // Modos disponibles
     expect(screen.getByText('Saco · BCV')).toBeInTheDocument();
     expect(screen.getByText('Detal · BCV')).toBeInTheDocument();
     expect(screen.getByText('Saco · Efectivo')).toBeInTheDocument();
     expect(screen.getByText('Detal · Efectivo')).toBeInTheDocument();
   });
 
-  it('muestra el precio de referencia en USD y VES para Saco BCV', () => {
+  it('muestra el precio unitario por saco en USD y VES para Saco BCV', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
 
-    // 8.50 / 1.5 = 5.666... -> $5.67
-    expect(screen.getByText('$5.67')).toBeInTheDocument();
-    // 5.666... * 36.5 = 206.833... -> Bs. 206,83
-    expect(screen.getByText('Bs. 206,83')).toBeInTheDocument();
+    // Precio saco: $8.50
+    expect(screen.getByText('$8.50')).toBeInTheDocument();
+    // 8.50 * 36.5 = 310.25 -> Bs. 310,25
+    expect(screen.getByText('Bs. 310,25')).toBeInTheDocument();
   });
 
-  it('calcula correctamente al escribir peso en modo Saco BCV', () => {
+  it('calcula correctamente al escribir cantidad de sacos en modo Saco BCV', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
 
-    const input = screen.getByPlaceholderText('Escribe el peso deseado');
-    fireEvent.change(input, { target: { value: '0.25' } });
+    const input = screen.getByPlaceholderText('Escribe la cantidad de sacos (ej: 1, 2...)');
+    fireEvent.change(input, { target: { value: '2' } });
 
-    // 5.6666 * 0.25 = 1.4166... -> $1.42
-    expect(screen.getByText('$1.42')).toBeInTheDocument();
-    expect(screen.getAllByText(/Bs\. 51,/i).length).toBeGreaterThan(0);
+    // 8.50 * 2 = 17.00
+    expect(screen.getByText('$17.00')).toBeInTheDocument();
+    // 17.00 * 36.5 = 620.50
+    expect(screen.getByText('Bs. 620,50')).toBeInTheDocument();
+    expect(screen.getByText(/2 sacos de "Cat Chow 1.5kg"/)).toBeInTheDocument();
   });
 
-  it('cambia a modo Detal · BCV y calcula directamente por peso', () => {
+  it('cambia a modo Saco · Efectivo y calcula sacos en dólares', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
 
-    // Seleccionar modo Detal BCV ($2.00 / kg)
+    fireEvent.click(screen.getByText('Saco · Efectivo'));
+
+    const input = screen.getByPlaceholderText('Escribe la cantidad de sacos (ej: 1, 2...)');
+    fireEvent.change(input, { target: { value: '3' } });
+
+    // 7.50 * 3 = 22.50
+    expect(screen.getByText('$22.50')).toBeInTheDocument();
+    expect(screen.queryByText(/Bs\./)).toBeNull();
+  });
+
+  it('cambia a modo Detal · BCV, muestra botones rápidos y calcula por peso', () => {
+    render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
+
     fireEvent.click(screen.getByText('Detal · BCV'));
+
+    // Ahora sí se muestran los botones rápidos para venta al detal
+    expect(screen.getByText('250g')).toBeInTheDocument();
+    expect(screen.getByText('500g')).toBeInTheDocument();
+    expect(screen.getByText('1 kg')).toBeInTheDocument();
+    expect(screen.getByText('2 kg')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Escribe el peso deseado')).toBeInTheDocument();
+    expect(screen.getByText('kg')).toBeInTheDocument();
 
     const input = screen.getByPlaceholderText('Escribe el peso deseado');
     fireEvent.change(input, { target: { value: '2' } });
@@ -65,48 +88,35 @@ describe('WeightPriceCalculator (REQ-012 / REQ-013)', () => {
     expect(screen.getByText('Bs. 146,00')).toBeInTheDocument();
   });
 
-  it('cambia a modo Efectivo y muestra resultado solo en dólares', () => {
+  it('en modo Detal, click en preset rellena input y actualiza cálculo', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
 
-    fireEvent.click(screen.getByText('Saco · Efectivo'));
-
-    const input = screen.getByPlaceholderText('Escribe el peso deseado');
-    fireEvent.change(input, { target: { value: '1.5' } });
-
-    // En efectivo $7.50 para 1.5kg -> exactamente $7.50
-    expect(screen.getByText('$7.50')).toBeInTheDocument();
-    // En modo efectivo no se muestra tasa BCV en el resultado
-    expect(screen.queryByText(/Bs\./)).toBeNull();
-  });
-
-  it('click en preset rellena el input y actualiza el cálculo', () => {
-    render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
-
+    fireEvent.click(screen.getByText('Detal · BCV'));
     fireEvent.click(screen.getByText('500g'));
 
     const input = screen.getByPlaceholderText('Escribe el peso deseado') as HTMLInputElement;
     expect(input.value).toBe('0.5');
 
-    // 5.6666 * 0.5 = 2.8333... -> $2.83
-    expect(screen.getByText('$2.83')).toBeInTheDocument();
+    // 2.00 * 0.5 = 1.00 -> $1.00
+    expect(screen.getByText('$1.00')).toBeInTheDocument();
   });
 
   it('no acepta letras ni caracteres especiales en el input', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} />);
 
-    const input = screen.getByPlaceholderText('Escribe el peso deseado') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('Escribe la cantidad de sacos (ej: 1, 2...)') as HTMLInputElement;
 
-    fireEvent.change(input, { target: { value: 'xyz' } });
+    fireEvent.change(input, { target: { value: 'abc' } });
     expect(input.value).toBe('');
 
-    fireEvent.change(input, { target: { value: '3.5' } });
-    expect(input.value).toBe('3.5');
+    fireEvent.change(input, { target: { value: '4' } });
+    expect(input.value).toBe('4');
   });
 
-  it('muestra aviso si no hay tasa disponible en modo BCV', () => {
+  it('muestra aviso si no hay tasa disponible en modo Saco BCV', () => {
     render(<WeightPriceCalculator {...DEFAULT_PROPS} rate={null} />);
 
-    const input = screen.getByPlaceholderText('Escribe el peso deseado');
+    const input = screen.getByPlaceholderText('Escribe la cantidad de sacos (ej: 1, 2...)');
     fireEvent.change(input, { target: { value: '1' } });
 
     expect(screen.getByText('Tasa no disponible')).toBeInTheDocument();

@@ -17,7 +17,7 @@ interface PriceModeConfig {
   priceUsd: number | null;
   /** Si true, el resultado se muestra en Bs. (tasa BCV); si false, en USD efectivo */
   isBcv: boolean;
-  /** Si true, el precio ya es por kg/unidad; si false, se divide por weight_kg */
+  /** Si true, es venta al detal (por kg con presets); si false, venta por saco (por unidad sin presets) */
   isRetail: boolean;
 }
 
@@ -30,8 +30,8 @@ interface WeightPriceCalculatorProps {
   priceUsdCash: number | null;
   /** Precio detal en efectivo (USD) — opcional */
   priceUsdRetailCash: number | null;
-  /** Peso del saco en kg — referencial, usado para calcular precio/kg en modos saco */
-  weightKg: number | null;
+  /** Peso referencial del saco en kg */
+  weightKg?: number | null;
   /** Tasa BCV actual */
   rate: number | null;
   /** Nombre del producto */
@@ -60,11 +60,10 @@ export function WeightPriceCalculator({
   priceUsdRetail,
   priceUsdCash,
   priceUsdRetailCash,
-  weightKg,
   rate,
   productName,
 }: WeightPriceCalculatorProps) {
-  const [weightInput, setWeightInput] = useState<string>('');
+  const [inputValue, setInputValue] = useState<string>('');
   const [activePreset, setActivePreset] = useState<number | null>(null);
   const [activeMode, setActiveMode] = useState<PriceMode>('saco_bcv');
 
@@ -111,67 +110,57 @@ export function WeightPriceCalculator({
   ];
 
   const currentMode = modes.find((m) => m.id === activeMode) ?? modes[0];
+  const isSackMode = !currentMode.isRetail;
 
-  // Precio por kg según el modo seleccionado
-  const pricePerKgUsd: number | null = (() => {
-    if (currentMode.priceUsd === null) return null;
-    if (currentMode.isRetail) {
-      // El precio de detal ya es por unidad/kg
-      return currentMode.priceUsd;
-    }
-    // Para modo saco: dividir por weight_kg
-    if (!weightKg || weightKg <= 0) return null;
-    return currentMode.priceUsd / weightKg;
-  })();
+  // Precio unitario base según modo
+  const basePriceUsd = currentMode.priceUsd;
 
-  // Peso activo del input
-  const activeWeightKg = weightInput ? parseFloat(weightInput) : null;
-  const isValidWeight =
-    activeWeightKg !== null && activeWeightKg > 0 && !isNaN(activeWeightKg);
+  // Valor numérico ingresado
+  const numericValue = inputValue ? parseFloat(inputValue) : null;
+  const isValidNumber = numericValue !== null && numericValue > 0 && !isNaN(numericValue);
 
-  // Precio calculado para el peso ingresado
-  const targetPriceUsd =
-    isValidWeight && pricePerKgUsd !== null
-      ? pricePerKgUsd * activeWeightKg!
-      : null;
+  // Precio total calculado
+  const targetPriceUsd = isValidNumber && basePriceUsd !== null ? basePriceUsd * numericValue : null;
 
   const targetPriceBs =
     currentMode.isBcv && targetPriceUsd !== null && rate
       ? targetPriceUsd * rate
       : null;
 
-  // Etiqueta legible del peso
-  const activeWeightLabel =
-    activePreset !== null
-      ? WEIGHT_PRESETS[activePreset].label
-      : weightInput
-        ? `${weightInput} kg`
-        : '';
+  // Etiqueta descriptiva para el bloque de resultado
+  const activeResultLabel = (() => {
+    if (!isValidNumber) return '';
+    if (isSackMode) {
+      return `${numericValue} ${numericValue === 1 ? 'saco' : 'sacos'} de "${productName}"`;
+    }
+    const weightLabel = activePreset !== null ? WEIGHT_PRESETS[activePreset].label : `${inputValue} kg`;
+    return `${weightLabel} de "${productName}"`;
+  })();
 
-  // Referencia precio/kg en la cabecera
-  const refPriceBs =
-    currentMode.isBcv && pricePerKgUsd !== null && rate
-      ? pricePerKgUsd * rate
-      : null;
+  // Precio de referencia en la cabecera
+  const refPriceBs = currentMode.isBcv && basePriceUsd !== null && rate ? basePriceUsd * rate : null;
 
   const handlePresetClick = (index: number) => {
     const preset = WEIGHT_PRESETS[index];
-    setWeightInput(String(preset.valueKg));
+    setInputValue(String(preset.valueKg));
     setActivePreset(index);
   };
 
   const handleInputChange = (value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setWeightInput(value);
-      const matchIndex = WEIGHT_PRESETS.findIndex((p) => String(p.valueKg) === value);
-      setActivePreset(matchIndex >= 0 ? matchIndex : null);
+    if (value === '' || (isSackMode ? /^\d+$/.test(value) : /^\d*\.?\d*$/.test(value))) {
+      setInputValue(value);
+      if (!isSackMode) {
+        const matchIndex = WEIGHT_PRESETS.findIndex((p) => String(p.valueKg) === value);
+        setActivePreset(matchIndex >= 0 ? matchIndex : null);
+      } else {
+        setActivePreset(null);
+      }
     }
   };
 
   const handleModeChange = (modeId: PriceMode) => {
     setActiveMode(modeId);
-    // Resetear input al cambiar modo
-    setWeightInput('');
+    setInputValue('');
     setActivePreset(null);
   };
 
@@ -188,7 +177,7 @@ export function WeightPriceCalculator({
         </h3>
       </div>
 
-      {/* Selector de modo — solo muestra tabs de los precios configurados */}
+      {/* Selector de modo */}
       {modes.length > 1 && (
         <div className="flex gap-1.5 flex-wrap">
           {modes.map((mode) => (
@@ -207,11 +196,13 @@ export function WeightPriceCalculator({
         </div>
       )}
 
-      {/* Precio por kg de referencia */}
-      {pricePerKgUsd !== null ? (
+      {/* Precio de referencia */}
+      {basePriceUsd !== null ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-          <span>Precio por kg ({currentMode.shortLabel}):</span>
-          <span className="font-bold text-primary">{formatUSD(pricePerKgUsd)}</span>
+          <span>
+            {isSackMode ? 'Precio por saco' : 'Precio por kg'} ({currentMode.shortLabel}):
+          </span>
+          <span className="font-bold text-primary">{formatUSD(basePriceUsd)}</span>
           {refPriceBs !== null && (
             <>
               <span>·</span>
@@ -221,9 +212,7 @@ export function WeightPriceCalculator({
         </div>
       ) : (
         <p className="text-xs text-muted-foreground italic">
-          {currentMode.isRetail
-            ? 'Precio detal no configurado.'
-            : 'Configura el peso del saco para ver el precio por kg.'}
+          Precio no configurado.
         </p>
       )}
 
@@ -231,11 +220,11 @@ export function WeightPriceCalculator({
       <div className="relative">
         <input
           type="text"
-          inputMode="decimal"
-          placeholder="Escribe el peso deseado"
-          value={weightInput}
+          inputMode={isSackMode ? 'numeric' : 'decimal'}
+          placeholder={isSackMode ? 'Escribe la cantidad de sacos (ej: 1, 2...)' : 'Escribe el peso deseado'}
+          value={inputValue}
           onChange={(e) => handleInputChange(e.target.value)}
-          className="w-full pl-4 pr-12 py-3 rounded-xl border-2 border-border bg-white
+          className="w-full pl-4 pr-20 py-3 rounded-xl border-2 border-border bg-white
                      text-base font-semibold text-foreground placeholder:text-outline
                      focus:outline-none focus:ring-2 focus:ring-secondary/25
                      focus:border-secondary transition-all"
@@ -244,42 +233,44 @@ export function WeightPriceCalculator({
           className="absolute right-4 top-1/2 -translate-y-1/2 text-sm
                        font-bold text-muted-foreground pointer-events-none"
         >
-          kg
+          {isSackMode ? 'saco(s)' : 'kg'}
         </span>
       </div>
 
-      {/* Botones preset */}
-      <div className="grid grid-cols-4 gap-2">
-        {WEIGHT_PRESETS.map((preset, index) => (
-          <button
-            key={preset.label}
-            onClick={() => handlePresetClick(index)}
-            className={`flex flex-col items-center justify-center py-2 px-1.5
-                       rounded-xl border text-xs font-bold transition-all duration-200
-                       ${activePreset === index
-                         ? 'bg-secondary text-white border-secondary shadow-md'
-                         : 'bg-white text-primary border-border hover:border-secondary/50 hover:shadow-sm'
-                       }`}
-          >
-            <span className="text-sm">{preset.label}</span>
-            {preset.sublabel && (
-              <span
-                className={`text-[10px] font-medium mt-0.5 ${
-                  activePreset === index ? 'text-white/80' : 'text-muted-foreground'
-                }`}
-              >
-                {preset.sublabel}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Botones preset — SOLO se muestran para venta al DETAL */}
+      {!isSackMode && (
+        <div className="grid grid-cols-4 gap-2">
+          {WEIGHT_PRESETS.map((preset, index) => (
+            <button
+              key={preset.label}
+              onClick={() => handlePresetClick(index)}
+              className={`flex flex-col items-center justify-center py-2 px-1.5
+                         rounded-xl border text-xs font-bold transition-all duration-200
+                         ${activePreset === index
+                           ? 'bg-secondary text-white border-secondary shadow-md'
+                           : 'bg-white text-primary border-border hover:border-secondary/50 hover:shadow-sm'
+                         }`}
+            >
+              <span className="text-sm">{preset.label}</span>
+              {preset.sublabel && (
+                <span
+                  className={`text-[10px] font-medium mt-0.5 ${
+                    activePreset === index ? 'text-white/80' : 'text-muted-foreground'
+                  }`}
+                >
+                  {preset.sublabel}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* RESULTADO */}
       <AnimatePresence mode="wait">
-        {isValidWeight && targetPriceUsd !== null && (
+        {isValidNumber && targetPriceUsd !== null && (
           <motion.div
-            key={`${activeMode}-${activeWeightKg}`}
+            key={`${activeMode}-${inputValue}`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -287,7 +278,7 @@ export function WeightPriceCalculator({
             className="bg-white rounded-xl p-4 border border-secondary/20 shadow-xs"
           >
             <p className="text-xs text-muted-foreground mb-3">
-              {activeWeightLabel} de &quot;{productName}&quot; — {currentMode.label}
+              {activeResultLabel} — {currentMode.label}
             </p>
 
             <div className={`grid gap-3 ${currentMode.isBcv ? 'grid-cols-2' : 'grid-cols-1'}`}>

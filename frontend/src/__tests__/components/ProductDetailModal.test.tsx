@@ -66,11 +66,11 @@ describe('ProductDetailModal', () => {
       />
     );
 
-    // 15.50 USD
-    expect(screen.getByText('$15.50')).toBeInTheDocument();
+    // 15.50 USD (tarjeta principal y referencia de calculadora)
+    expect(screen.getAllByText('$15.50').length).toBeGreaterThanOrEqual(1);
 
-    // 15.50 * 36.50 = 565,75 Bs
-    expect(screen.getByText(/565,75/)).toBeInTheDocument();
+    // 15.50 * 36.50 = 565,75 Bs (tarjeta principal y referencia de calculadora)
+    expect(screen.getAllByText(/565,75/).length).toBeGreaterThanOrEqual(1);
   });
 
   it('muestra la tasa oficial y la fecha oficial formateada como DD/MM/YYYY', () => {
