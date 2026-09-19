@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, TrendingUp, Calendar, Tag, Layers, CheckCircle2, DollarSign } from 'lucide-react';
 import { formatBsNumber, formatUSD } from '@/utils/currency';
 import { getCategoryVisual } from '@/utils/categoryVisuals';
+import { WeightPriceCalculator } from './WeightPriceCalculator';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -149,6 +150,16 @@ export function ProductDetailModal({
                 Calculado multiplicando el precio base en USD por la tasa oficial vigente.
               </p>
             </div>
+
+            {/* Calculadora de precio por peso — solo productos con peso definido */}
+            {product.weight_kg && product.weight_kg > 0 && (
+              <WeightPriceCalculator
+                priceUsd={product.price_usd}
+                weightKg={product.weight_kg}
+                rate={currentRate ?? null}
+                productName={product.name}
+              />
+            )}
 
             {/* Grid Secundario: Precio USD y Tasa BCV */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
