@@ -12,26 +12,35 @@ async def test_get_categories_empty_seeds_defaults(client: AsyncClient):
     assert "Gato" in names
 
 @pytest.mark.asyncio
-async def test_create_category_normalizes_name(client: AsyncClient):
-    response = await client.post("/api/v1/categories/", json={"name": "  reptiles  ", "description": "Mascotas exóticas"})
+async def test_create_category_normalizes_name(client: AsyncClient, auth_headers: dict):
+    # Sin token -> 401
+    unauth = await client.post("/api/v1/categories/", json={"name": "Reptiles"})
+    assert unauth.status_code == 401
+
+    # Con token -> 201
+    response = await client.post("/api/v1/categories/", json={"name": "  reptiles  ", "description": "Mascotas exóticas"}, headers=auth_headers)
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "Reptiles"
 
     # Duplicate post should return existing record without error
-    response_dup = await client.post("/api/v1/categories/", json={"name": "REPTILES"})
+    response_dup = await client.post("/api/v1/categories/", json={"name": "REPTILES"}, headers=auth_headers)
     assert response_dup.status_code == 201
     assert response_dup.json()["id"] == data["id"]
 
 @pytest.mark.asyncio
-async def test_get_and_create_brands(client: AsyncClient):
-    # Create brand
-    create_res = await client.post("/api/v1/brands/", json={"name": "  pedigree  "})
+async def test_get_and_create_brands(client: AsyncClient, auth_headers: dict):
+    # Sin token -> 401
+    unauth = await client.post("/api/v1/brands/", json={"name": "Pedigree"})
+    assert unauth.status_code == 401
+
+    # Create brand con token
+    create_res = await client.post("/api/v1/brands/", json={"name": "  pedigree  "}, headers=auth_headers)
     assert create_res.status_code == 201
     data = create_res.json()
     assert data["name"] == "Pedigree"
 
-    # List brands
+    # List brands (Público)
     get_res = await client.get("/api/v1/brands/")
     assert get_res.status_code == 200
     brands = get_res.json()

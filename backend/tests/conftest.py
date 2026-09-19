@@ -52,3 +52,42 @@ async def client(db_session: AsyncSession):
         
     # Clear overrides after the test
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def admin_user(db_session: AsyncSession):
+    """Crea un usuario admin activo en la base de datos de pruebas."""
+    from app.core.security import get_password_hash
+    from app.models.user import User
+
+    user = User(
+        username="testadmin",
+        email="admin@test.com",
+        hashed_password=get_password_hash("securepass123"),
+        full_name="Test Administrator",
+        role="admin",
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def admin_token(admin_user):
+    """Genera un JWT válido para el usuario admin de pruebas."""
+    from app.core.security import create_access_token
+
+    return create_access_token(
+        user_id=admin_user.id,
+        username=admin_user.username,
+        role=admin_user.role,
+        token_version=admin_user.token_version,
+    )
+
+
+@pytest.fixture
+def auth_headers(admin_token):
+    """Retorna los encabezados HTTP con Bearer token para peticiones autenticadas."""
+    return {"Authorization": f"Bearer {admin_token}"}
