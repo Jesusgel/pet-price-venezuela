@@ -1,42 +1,73 @@
-﻿import { writeFileSync, mkdirSync } from 'fs';
+import sharp from 'sharp';
+import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const sizes = [
-  { name: 'icon-192x192.svg', size: 192 },
-  { name: 'icon-512x512.svg', size: 512 },
-  { name: 'apple-touch-icon.svg', size: 180 },
-];
+const bg = { r: 253, g: 249, b: 244, alpha: 1 }; // #fdf9f4
+const logoPath = join(process.cwd(), 'public', 'logo_el_saman.png');
+const outputIconsDir = join(process.cwd(), 'public', 'icons');
+const appDir = join(process.cwd(), 'src', 'app');
 
-const generateSVG = (size) => `
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${Math.round(size * 0.2)}" fill="#321d0c"/>
-  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        font-weight="700" font-size="${Math.round(size * 0.55)}"
-        fill="#fdf9f4">S</text>
+mkdirSync(outputIconsDir, { recursive: true });
+
+async function run() {
+  const trimmedBuffer = await sharp(logoPath).trim().toBuffer();
+
+  async function makePNG(canvasSize, logoSize, outputPath) {
+    const resizedLogo = await sharp(trimmedBuffer)
+      .resize(logoSize, logoSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .toBuffer();
+
+    await sharp({
+      create: {
+        width: canvasSize,
+        height: canvasSize,
+        channels: 4,
+        background: bg,
+      },
+    })
+      .composite([{ input: resizedLogo, gravity: 'center' }])
+      .png({ quality: 90, compressionLevel: 9 })
+      .toFile(outputPath);
+
+    console.log(`Generated PNG: ${outputPath}`);
+  }
+
+  async function makeSVG(canvasSize, logoSize, outputPath) {
+    const resizedLogo = await sharp(trimmedBuffer)
+      .resize(logoSize, logoSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+
+    const base64 = resizedLogo.toString('base64');
+    const offset = Math.round((canvasSize - logoSize) / 2);
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasSize}" height="${canvasSize}" viewBox="0 0 ${canvasSize} ${canvasSize}">
+  <rect width="${canvasSize}" height="${canvasSize}" rx="${Math.round(canvasSize * 0.18)}" fill="#fdf9f4"/>
+  <image href="data:image/png;base64,${base64}" x="${offset}" y="${offset}" width="${logoSize}" height="${logoSize}"/>
 </svg>`;
 
-const outputDir = join(process.cwd(), 'public', 'icons');
-mkdirSync(outputDir, { recursive: true });
+    writeFileSync(outputPath, svg.trim());
+    console.log(`Generated SVG: ${outputPath}`);
+  }
 
-sizes.forEach(({ name, size }) => {
-  const filePath = join(outputDir, name);
-  writeFileSync(filePath, generateSVG(size).trim());
-  console.log(`Generated: ${filePath}`);
+  // PWA PNG icons
+  await makePNG(192, 154, join(outputIconsDir, 'icon-192x192.png'));
+  await makePNG(512, 410, join(outputIconsDir, 'icon-512x512.png'));
+  await makePNG(512, 360, join(outputIconsDir, 'icon-maskable-512x512.png'));
+  await makePNG(180, 144, join(outputIconsDir, 'apple-touch-icon.png'));
+
+  // Next.js static app icons
+  await makePNG(48, 40, join(appDir, 'icon.png'));
+  await makePNG(180, 144, join(appDir, 'apple-icon.png'));
+
+  // Fallback SVGs for backwards compatibility
+  await makeSVG(192, 154, join(outputIconsDir, 'icon-192x192.svg'));
+  await makeSVG(512, 410, join(outputIconsDir, 'icon-512x512.svg'));
+  await makeSVG(512, 360, join(outputIconsDir, 'icon-maskable-512x512.svg'));
+  await makeSVG(180, 144, join(outputIconsDir, 'apple-touch-icon.svg'));
+}
+
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
-
-const maskableSize = 512;
-const padding = Math.round(maskableSize * 0.1);
-const innerSize = maskableSize - padding * 2;
-const maskableSVG = `
-<svg xmlns="http://www.w3.org/2000/svg" width="${maskableSize}" height="${maskableSize}" viewBox="0 0 ${maskableSize} ${maskableSize}">
-  <rect width="${maskableSize}" height="${maskableSize}" fill="#321d0c"/>
-  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        font-weight="700" font-size="${Math.round(innerSize * 0.55)}"
-        fill="#fdf9f4">S</text>
-</svg>`;
-
-const maskablePath = join(outputDir, 'icon-maskable-512x512.svg');
-writeFileSync(maskablePath, maskableSVG.trim());
-console.log(`Generated: ${maskablePath}`);

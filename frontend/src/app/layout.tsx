@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Epilogue, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
@@ -45,7 +45,7 @@ export default function RootLayout({
     >
       <head>
         <meta name="theme-color" content="#321d0c" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.svg" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen bg-background text-foreground font-sans">
         <ServiceWorkerRegistrar />
