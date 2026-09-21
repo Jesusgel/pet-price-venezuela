@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { Product, ExchangeRate } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, TrendingUp, Calendar, Layers, CheckCircle2, DollarSign, Banknote, ShoppingBasket } from 'lucide-react';
+import { X, TrendingUp, Calendar, Layers, CheckCircle2, DollarSign, Banknote, ShoppingBasket, Pencil, Trash2 } from 'lucide-react';
 import { formatBsNumber, formatUSD } from '@/utils/currency';
 import { getCategoryVisual } from '@/utils/categoryVisuals';
 import { WeightPriceCalculator } from './WeightPriceCalculator';
@@ -13,6 +13,9 @@ interface ProductDetailModalProps {
   onClose: () => void;
   product: Product | null;
   rateData?: ExchangeRate | null;
+  isAdmin?: boolean;
+  onEdit?: (product: Product) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function ProductDetailModal({
@@ -20,6 +23,9 @@ export function ProductDetailModal({
   onClose,
   product,
   rateData,
+  isAdmin = false,
+  onEdit,
+  onDelete,
 }: ProductDetailModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -271,10 +277,43 @@ export function ProductDetailModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 bg-surface-container-lowest border-t border-border flex justify-end">
+          <div className="px-6 py-4 bg-surface-container-lowest border-t border-border flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+            {isAdmin && (onEdit || onDelete) ? (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (product) onDelete(product.id);
+                    }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm text-error bg-error/10 hover:bg-error/20 border border-error/20 transition-all active:scale-98 min-h-[44px]"
+                    title="Eliminar producto"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Eliminar</span>
+                  </button>
+                )}
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (product) onEdit(product);
+                    }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm text-secondary hover:bg-secondary/15 border border-secondary/25 transition-all active:scale-98 min-h-[44px]"
+                    title="Editar producto"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span>Editar</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="hidden sm:block" />
+            )}
+
             <button
               onClick={onClose}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 transition-all shadow-md active:scale-98"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary/90 transition-all shadow-md active:scale-98 min-h-[44px]"
             >
               Cerrar
             </button>

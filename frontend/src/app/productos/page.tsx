@@ -220,8 +220,8 @@ export default function ProductosPage() {
                 product={product}
                 rate={rateData?.rate}
                 onSelect={setSelectedProduct}
-                onEdit={isAdmin && !isMobile ? handleEditProduct : undefined}
-                onDelete={isAdmin && !isMobile ? handleDeleteProduct : undefined}
+                onEdit={isAdmin ? handleEditProduct : undefined}
+                onDelete={isAdmin ? handleDeleteProduct : undefined}
               />
             ))
           )}
@@ -247,8 +247,8 @@ export default function ProductosPage() {
                 product={product}
                 rate={rateData?.rate}
                 onSelect={setSelectedProduct}
-                onEdit={isAdmin && !isMobile ? handleEditProduct : undefined}
-                onDelete={isAdmin && !isMobile ? handleDeleteProduct : undefined}
+                onEdit={isAdmin ? handleEditProduct : undefined}
+                onDelete={isAdmin ? handleDeleteProduct : undefined}
               />
             ))
           )}
@@ -330,6 +330,15 @@ export default function ProductosPage() {
         onClose={() => setSelectedProduct(null)}
         product={selectedProduct}
         rateData={rateData}
+        isAdmin={isAdmin}
+        onEdit={(prod) => {
+          setSelectedProduct(null);
+          handleEditProduct(prod);
+        }}
+        onDelete={(id) => {
+          setSelectedProduct(null);
+          handleDeleteProduct(id);
+        }}
       />
     </main>
   );
