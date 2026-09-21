@@ -122,4 +122,52 @@ describe('ProductDetailModal', () => {
 
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
+
+  it('no muestra botones de Editar y Eliminar si isAdmin es false', () => {
+    render(
+      <ProductDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        product={mockProduct}
+        rateData={mockRateData}
+        isAdmin={false}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTitle('Editar producto')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Eliminar producto')).not.toBeInTheDocument();
+  });
+
+  it('muestra botones de Editar y Eliminar cuando isAdmin es true y dispara callbacks al hacer clic', () => {
+    const handleEdit = vi.fn();
+    const handleDelete = vi.fn();
+
+    render(
+      <ProductDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        product={mockProduct}
+        rateData={mockRateData}
+        isAdmin={true}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    );
+
+    const editBtn = screen.getByTitle('Editar producto');
+    const deleteBtn = screen.getByTitle('Eliminar producto');
+
+    expect(editBtn).toBeInTheDocument();
+    expect(deleteBtn).toBeInTheDocument();
+
+    fireEvent.click(editBtn);
+    expect(handleEdit).toHaveBeenCalledTimes(1);
+    expect(handleEdit).toHaveBeenCalledWith(mockProduct);
+
+    fireEvent.click(deleteBtn);
+    expect(handleDelete).toHaveBeenCalledTimes(1);
+    expect(handleDelete).toHaveBeenCalledWith(mockProduct.id);
+  });
 });
