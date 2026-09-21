@@ -1,0 +1,49 @@
+name,category,unit,weight_kg,brand,price_usd,price_usd_retail,price_usd_cash,is_active
+Las Tunas Desarrollo Crecimiento Cerdo,Porcino,Saco,40.0,,35.50,1.02,,True
+Corpoagro Alimento Balanceado,Granja,Saco,35.0,,22.50,1.08,,True
+Alipa Inicio Cerdo,Porcino,Saco,40.0,,39.00,1.05,,True
+Alipa Desarrollo Cerdo,Porcino,Saco,40.0,,35.50,1.05,,True
+Alipa Terminador Cerdo,Porcino,Saco,40.0,,36.70,1.05,,True
+Vitalim Cachavit,Granja,Saco,26.0,,31.00,1.77,,True
+Maíz Amarillo,Materia Prima,Saco,50.0,,25.00,0.66,,True
+Pico de Maíz,Materia Prima,Saco,50.0,,38.00,0.87,,True
+Frijol Chino,Materia Prima,Saco,40.0,,28.00,0.75,,True
+Arroz Picao,Materia Prima,Saco,50.0,,36.00,0.75,,True
+Torta Polar Cerdos,Materia Prima,Saco,28.0,,17.00,0.68,,True
+Concha de Arroz,Materia Prima,Saco,,,2.00,,3.00,True
+Melaza,Suplementos,Tobo,25.0,,18.00,,,True
+Sal Roja - Sal Blanca,Suplementos,Saco,20.0,,3.25,,5.00,True
+Mixto Aves,Aves,Otro,1.0,,2.00,,3.50,True
+Alpiste,Aves,Otro,1.0,,2.50,,4.50,True
+Girasol,Aves,Otro,1.0,,3.50,,5.50,True
+Ringo Cachorro Perrarina,Perro,Saco,30.0,,70.00,2.97,55.00,True
+Ringo Adulto Perrarina,Perro,Saco,30.0,,61.00,2.64,48.00,True
+Dogourmet Cachorro Perrarina,Perro,Saco,18.0,,68.00,5.06,68.00,True
+Italcan Perrarina,Perro,Saco,30.0,,57.00,2.47,47.00,True
+Filpo Perrarina,Perro,Saco,30.0,,53.00,2.47,46.00,True
+Filpo Gatos,Gato,Saco,8.0,,29.00,4.56,23.00,True
+Mirringo Gatos 1 Kg x 20 Kg,Gato,Saco,20.0,,80.50,5.06,65.00,True
+Mirringo Gatos,Gato,Saco,8.0,,32.50,5.06,25.00,True
+Don Kat Gatarina,Gato,Saco,16.0,,67.50,5.12,50.00,True
+Gatsby Pescado Gatarina,Gato,Saco,17.0,,62.00,4.83,,True
+Arena para Gatos,Gato,Otro,2.0,,2.00,,3.70,True
+Arena para Gatos Strong Cat,Gato,Otro,4.0,,8.50,,9.85,True
+Fortalina Puricachama,Granja,Saco,25.0,,31.00,1.77,,True
+Convaca P1 Inicio Pollos,Aves,Saco,40.0,,38.00,1.05,,True
+Convaca P2 Engorde Pollos,Aves,Saco,40.0,,37.00,1.05,,True
+Convaca Cerdextra,Porcino,Saco,40.0,,42.00,,,True
+Convaca Nº 15,Ganado,Saco,35.0,,17.50,0.55,,True
+Convaca Cerdo Genérico,Porcino,Saco,35.0,,24.90,0.71,,True
+Vitalim Multipropósito,Ganado,Saco,40.0,,16.90,4.91,,True
+Mundo Granos Multiespecies,Granja,Saco,40.0,,16.95,0.53,,True
+Mundo Granos Terminador 15%,Porcino,Saco,40.0,,24.90,0.74,,True
+Ligadito Maikel Cerdos,Porcino,Saco,40.0,,26.00,0.81,,True
+Proalca Vaca Lechera 18%,Ganado,Saco,35.0,,20.75,,,True
+Puro Lomo Cerdo Especial,Porcino,Saco,20.0,,12.90,,,True
+Puro Lomo Vaca Lechera 21%,Ganado,Saco,35.0,,28.50,0.88,,True
+Procia Multipollos,Aves,Saco,35.0,,25.00,0.85,,True
+Procia Vaca Lechera 18%,Ganado,Saco,35.0,,22.50,,,True
+Procia Multiponedora 12%,Aves,Saco,35.0,,24.50,0.82,,True
+La Granja Ponedora,Aves,Saco,35.0,,22.50,0.77,,True
+Las Tunas Ponedora,Aves,Saco,40.0,,35.00,0.99,,True
+Agroproca Ponedora 18%,Aves,Saco,40.0,,33.75,0.99,,True

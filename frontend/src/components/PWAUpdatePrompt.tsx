@@ -157,3 +157,5 @@ export function PWAUpdatePrompt({ testForceShow = false, onUpdate }: PWAUpdatePr
     </aside>
   );
 }
+
+export default PWAUpdatePrompt;
