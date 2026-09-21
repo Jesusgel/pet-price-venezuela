@@ -16,17 +16,25 @@ import {
   RateImpactSample,
 } from '@/types';
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   if (typeof window !== 'undefined') {
+    const isHttps = window.location.protocol === 'https:';
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+    if (isHttps && !isLocalhost) {
+      console.warn(
+        '[API] NEXT_PUBLIC_API_URL no está configurada en un entorno HTTPS. Evitando conexión insegura HTTP.'
+      );
+      return `${window.location.origin}/api/v1`;
+    }
     const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
     return `http://${host}:8000/api/v1`;
   }
   return 'http://127.0.0.1:8000/api/v1';
 };
-
 /**
  * Helper para peticiones autenticadas: inyecta Bearer token y emite auth:expired si recibe 401.
  */
