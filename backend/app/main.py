@@ -22,7 +22,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Setup - Soporte para localhost, 127.0.0.1 y LAN en desarrollo
+# CORS Setup - Soporte para localhost, LAN y cualquier subdominio seguro de Vercel (*.vercel.app)
 cors_origins = (
     list(settings.ALLOWED_ORIGINS)
     if isinstance(settings.ALLOWED_ORIGINS, list)
@@ -32,14 +32,15 @@ for default_origin in ["http://localhost:3000", "http://127.0.0.1:3000"]:
     if default_origin not in cors_origins:
         cors_origins.append(default_origin)
 
+cors_regex = (
+    r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|"
+    r"https://([a-zA-Z0-9_-]+\.)*vercel\.app)$"
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=(
-        r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$"
-        if settings.ENVIRONMENT == "development"
-        else None
-    ),
+    allow_origin_regex=cors_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
