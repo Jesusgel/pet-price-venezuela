@@ -4,7 +4,6 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
-import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 
 const epilogue = Epilogue({
   variable: "--font-display",
@@ -63,7 +62,6 @@ export default function RootLayout({
             {children}
           </AppShell>
         </Providers>
-        <PWAUpdatePrompt />
       </body>
 
     </html>
