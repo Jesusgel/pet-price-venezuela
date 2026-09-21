@@ -1,7 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.api import auth, products, rates, categories, brands
@@ -56,3 +57,17 @@ app.include_router(rates.router, prefix=f"{settings.API_V1_STR}/rate", tags=["ra
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Pet-Price Venezuela API. Go to /docs for Swagger UI."}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    error_detail = str(exc) if (settings.DEBUG or settings.ENVIRONMENT != "production") else None
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Error interno del servidor",
+            "error": error_detail,
+            "type": type(exc).__name__,
+        },
+    )
