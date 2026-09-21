@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: list[str] | str = "http://localhost:3000"
 
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def assemble_db_connection(cls, v: str) -> str:
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
     @field_validator("ALLOWED_ORIGINS")
     @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
