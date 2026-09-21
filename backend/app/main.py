@@ -59,6 +59,39 @@ def read_root():
     return {"message": "Welcome to Pet-Price Venezuela API. Go to /docs for Swagger UI."}
 
 
+@app.get("/api/v1/health/db-info")
+async def get_db_info():
+    from urllib.parse import urlparse
+    from sqlmodel import text
+    from app.core.database import async_session_maker
+
+    parsed = urlparse(settings.DATABASE_URL)
+    host = parsed.hostname
+    dbname = parsed.path.lstrip("/")
+
+    async with async_session_maker() as session:
+        try:
+            ver = await session.exec(text("SELECT version_num FROM alembic_version;"))
+            versions = [v[0] for v in ver.all()]
+        except Exception as e:
+            versions = str(e)
+
+        try:
+            cols = await session.exec(
+                text("SELECT column_name FROM information_schema.columns WHERE table_name = 'exchange_rates';")
+            )
+            columns = [c[0] for c in cols.all()]
+        except Exception as e:
+            columns = str(e)
+
+    return {
+        "db_host": host,
+        "database": dbname,
+        "alembic_version": versions,
+        "exchange_rates_columns": columns,
+    }
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
