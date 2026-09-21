@@ -107,7 +107,7 @@ async def test_read_products_filter_search(client: AsyncClient, db_session):
 
 
 @pytest.mark.asyncio
-async def test_create_product(client: AsyncClient, db_session):
+async def test_create_product(client: AsyncClient, db_session, auth_headers: dict):
     from app.repositories.rate_repository import ExchangeRateRepository
     from datetime import date
     
@@ -121,7 +121,12 @@ async def test_create_product(client: AsyncClient, db_session):
         "unit": "piece"
     }
     
-    response = await client.post("/api/v1/products/", json=new_product)
+    # 1. Sin token -> 401 Unauthorized
+    unauth_res = await client.post("/api/v1/products/", json=new_product)
+    assert unauth_res.status_code == 401
+
+    # 2. Con token de admin -> 201 Created
+    response = await client.post("/api/v1/products/", json=new_product, headers=auth_headers)
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "New Cat Toy"
@@ -148,7 +153,7 @@ async def test_read_product_by_id(client: AsyncClient, db_session):
     assert Decimal(data["price_bs"]) == Decimal("400.0")
 
 @pytest.mark.asyncio
-async def test_update_product(client: AsyncClient, db_session):
+async def test_update_product(client: AsyncClient, db_session, auth_headers: dict):
     from app.repositories.rate_repository import ExchangeRateRepository
     from datetime import date
     
@@ -164,7 +169,12 @@ async def test_update_product(client: AsyncClient, db_session):
         "price_usd": "15.0"
     }
     
-    response = await client.put(f"/api/v1/products/{p.id}", json=update_data)
+    # Sin token -> 401
+    unauth_res = await client.put(f"/api/v1/products/{p.id}", json=update_data)
+    assert unauth_res.status_code == 401
+
+    # Con token -> 200
+    response = await client.put(f"/api/v1/products/{p.id}", json=update_data, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Food Alpha"
@@ -172,7 +182,7 @@ async def test_update_product(client: AsyncClient, db_session):
     assert Decimal(data["price_bs"]) == Decimal("600.0")
 
 @pytest.mark.asyncio
-async def test_delete_product(client: AsyncClient, db_session):
+async def test_delete_product(client: AsyncClient, db_session, auth_headers: dict):
     from app.repositories.rate_repository import ExchangeRateRepository
     from datetime import date
     
@@ -184,7 +194,12 @@ async def test_delete_product(client: AsyncClient, db_session):
     await db_session.commit()
     await db_session.refresh(p)
     
-    response = await client.delete(f"/api/v1/products/{p.id}")
+    # Sin token -> 401
+    unauth_res = await client.delete(f"/api/v1/products/{p.id}")
+    assert unauth_res.status_code == 401
+
+    # Con token -> 204
+    response = await client.delete(f"/api/v1/products/{p.id}", headers=auth_headers)
     assert response.status_code == 204
     
     deleted_p = await db_session.get(Product, p.id)
