@@ -1,3 +1,4 @@
+import re
 from typing import Literal
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,7 +30,14 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_db_connection(cls, v: str) -> str:
         if v.startswith("postgresql://"):
-            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Normalizar parámetros libpq (Neon/Postgres C) para compatibilidad con asyncpg
+        if "sslmode=" in v:
+            v = v.replace("sslmode=", "ssl=")
+        if "channel_binding=" in v:
+            v = re.sub(r"[&?]channel_binding=[^&]+", "", v)
+            if "?" not in v and "&" in v:
+                v = v.replace("&", "?", 1)
         return v
 
     @field_validator("ALLOWED_ORIGINS")
