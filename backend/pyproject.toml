@@ -12,6 +12,8 @@ dependencies = [
     "asyncpg",
     "httpx",
     "pydantic-settings",
+    "pyjwt>=2.14.0",
+    "pwdlib[bcrypt]>=0.3.1",
 ]
 
 [dependency-groups]

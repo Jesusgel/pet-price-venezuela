@@ -20,10 +20,41 @@ export interface ExchangeRate {
   rate_date: string;
   source: string;
   fetched_at: string;
+  changed_by_user_id?: number | null;
 }
 
 export interface ExchangeRateUpdate {
   rate: number;
+}
+
+export interface RateImpactSample {
+  product_name: string;
+  price_usd: number;
+  old_price_bs: number;
+  new_price_bs: number;
+  diff_bs: number;
+}
+
+export interface RatePreviewResponse {
+  current_rate: number;
+  proposed_rate: number;
+  deviation_pct: number;
+  is_high_deviation: boolean;
+  sample_impacts: RateImpactSample[];
+}
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  role: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user: UserProfile;
 }
 
 export interface PaginatedRateResponse {

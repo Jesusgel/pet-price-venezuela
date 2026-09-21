@@ -10,7 +10,6 @@ Campos sin datos en el Excel: category='', brand=None, weight_kg=None
 """
 
 import asyncio
-import os
 import sys
 from decimal import Decimal, InvalidOperation
 from pathlib import Path

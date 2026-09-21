@@ -8,7 +8,10 @@ import { RateTable } from '@/components/RateTable';
 import { RateEditModal } from '@/components/RateEditModal';
 import { toast } from 'react-hot-toast';
 
+import { useAuth } from '@/hooks/useAuth';
+
 export default function TasasPage() {
+  const { isAdmin } = useAuth();
   const [page, setPage] = useState(1);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -27,8 +30,9 @@ export default function TasasPage() {
       await updateMutation.mutateAsync({ rate: newRate });
       toast.success('Tasa de cambio actualizada');
       setIsEditModalOpen(false);
-    } catch {
-      toast.error('Error al actualizar la tasa de cambio');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al actualizar la tasa de cambio';
+      toast.error(msg);
     }
   };
 
@@ -36,8 +40,9 @@ export default function TasasPage() {
     try {
       await refreshMutation.mutateAsync();
       toast.success('Tasa sincronizada con BCV (DolarAPI)');
-    } catch {
-      toast.error('No se pudo conectar con DolarAPI');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo conectar con DolarAPI';
+      toast.error(msg);
     }
   };
 
@@ -89,25 +94,27 @@ export default function TasasPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md active:scale-95"
-          >
-            <Pencil className="w-4 h-4" />
-            Editar Tasa Actual
-          </button>
+        {/* Action Buttons: Solo visibles y habilitados para Administradores */}
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md active:scale-95"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar Tasa Actual
+            </button>
 
-          <button
-            onClick={handleSyncBCV}
-            disabled={refreshMutation.isPending}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-on-surface-variant bg-surface-container hover:bg-surface-container-high border border-border transition-all disabled:opacity-50 active:scale-95"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
-            {refreshMutation.isPending ? 'Sincronizando...' : 'Sincronizar BCV'}
-          </button>
-        </div>
+            <button
+              onClick={handleSyncBCV}
+              disabled={refreshMutation.isPending}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-on-surface-variant bg-surface-container hover:bg-surface-container-high border border-border transition-all disabled:opacity-50 active:scale-95"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
+              {refreshMutation.isPending ? 'Sincronizando...' : 'Sincronizar BCV'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* History Section */}

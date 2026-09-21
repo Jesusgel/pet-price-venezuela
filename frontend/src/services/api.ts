@@ -1,16 +1,99 @@
-import { Product, ExchangeRate, ProductCreate, ProductUpdate, PaginatedResponse, ExchangeRateUpdate, PaginatedRateResponse, Category, CategoryCreate, Brand, BrandCreate } from '@/types';
+import {
+  Product,
+  ExchangeRate,
+  ProductCreate,
+  ProductUpdate,
+  PaginatedResponse,
+  ExchangeRateUpdate,
+  PaginatedRateResponse,
+  Category,
+  CategoryCreate,
+  Brand,
+  BrandCreate,
+  TokenResponse,
+  UserProfile,
+  RatePreviewResponse,
+  RateImpactSample,
+} from '@/types';
 
 const getApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:8000/api/v1`;
+    const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+    return `http://${host}:8000/api/v1`;
   }
-  return 'http://localhost:8000/api/v1';
+  return 'http://127.0.0.1:8000/api/v1';
 };
 
+/**
+ * Helper para peticiones autenticadas: inyecta Bearer token y emite auth:expired si recibe 401.
+ */
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+  const headers: Record<string, string> = {
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (!headers['Content-Type'] && options.body && typeof options.body === 'string') {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (res.status === 401 && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('auth:expired'));
+  }
+
+  return res;
+}
+
 export const api = {
+  // --- Autenticación ---
+  login: async (username: string, password: string): Promise<TokenResponse> => {
+    const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!res.ok) {
+      const errorData = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(errorData.detail || 'Error al iniciar sesión');
+    }
+
+    return res.json();
+  },
+
+  getMe: async (): Promise<UserProfile> => {
+    const res = await authFetch(`${getApiBaseUrl()}/auth/me`);
+    if (!res.ok) {
+      throw new Error('Sesión inválida o expirada');
+    }
+    return res.json();
+  },
+
+  revokeAllSessions: async (): Promise<{ message: string }> => {
+    const res = await authFetch(`${getApiBaseUrl()}/auth/revoke-sessions`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      throw new Error('Error al revocar las sesiones');
+    }
+    return res.json();
+  },
+
+  // --- Productos ---
   getProducts: async (
     search?: string,
     category?: string,
@@ -45,17 +128,57 @@ export const api = {
     };
   },
 
+  createProduct: async (product: ProductCreate): Promise<Product> => {
+    const res = await authFetch(`${getApiBaseUrl()}/products/`, {
+      method: 'POST',
+      body: JSON.stringify(product),
+    });
+
+    if (!res.ok) {
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to create product');
+    }
+
+    return res.json();
+  },
+
+  updateProduct: async (id: number, product: ProductUpdate): Promise<Product> => {
+    const res = await authFetch(`${getApiBaseUrl()}/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(product),
+    });
+
+    if (!res.ok) {
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to update product');
+    }
+
+    return res.json();
+  },
+
+  deleteProduct: async (id: number): Promise<void> => {
+    const res = await authFetch(`${getApiBaseUrl()}/products/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to delete product');
+    }
+  },
+
+  // --- Tasas de Cambio ---
   getExchangeRate: async (): Promise<ExchangeRate> => {
     const res = await fetch(`${getApiBaseUrl()}/rate`);
-    
+
     if (!res.ok) {
       throw new Error('Failed to fetch exchange rate');
     }
-    
+
     const data = await res.json();
     return {
       ...data,
-      rate: Number(data.rate)
+      rate: Number(data.rate),
     };
   },
 
@@ -77,16 +200,39 @@ export const api = {
     };
   },
 
+  previewRateChange: async (rate: number): Promise<RatePreviewResponse> => {
+    const res = await authFetch(`${getApiBaseUrl()}/rate/preview`, {
+      method: 'POST',
+      body: JSON.stringify({ rate }),
+    });
+    if (!res.ok) {
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to preview rate change');
+    }
+    const data = await res.json();
+    return {
+      ...data,
+      current_rate: Number(data.current_rate),
+      proposed_rate: Number(data.proposed_rate),
+      deviation_pct: Number(data.deviation_pct),
+      sample_impacts: (data.sample_impacts || []).map((sample: RateImpactSample) => ({
+        ...sample,
+        price_usd: Number(sample.price_usd),
+        old_price_bs: Number(sample.old_price_bs),
+        new_price_bs: Number(sample.new_price_bs),
+        diff_bs: Number(sample.diff_bs),
+      })),
+    };
+  },
+
   updateCurrentRate: async (data: ExchangeRateUpdate): Promise<ExchangeRate> => {
-    const res = await fetch(`${getApiBaseUrl()}/rate/current`, {
+    const res = await authFetch(`${getApiBaseUrl()}/rate/current`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      throw new Error('Failed to update current rate');
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to update current rate');
     }
     const updated = await res.json();
     return {
@@ -96,11 +242,12 @@ export const api = {
   },
 
   refreshRate: async (): Promise<ExchangeRate> => {
-    const res = await fetch(`${getApiBaseUrl()}/rate/update-rate`, {
+    const res = await authFetch(`${getApiBaseUrl()}/rate/update-rate`, {
       method: 'POST',
     });
     if (!res.ok) {
-      throw new Error('Failed to refresh rate');
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to refresh rate');
     }
     const data = await res.json();
     return {
@@ -109,48 +256,7 @@ export const api = {
     };
   },
 
-  createProduct: async (product: ProductCreate): Promise<Product> => {
-    const res = await fetch(`${getApiBaseUrl()}/products/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(product),
-    });
-    
-    if (!res.ok) {
-      throw new Error('Failed to create product');
-    }
-    
-    return res.json();
-  },
-
-  updateProduct: async (id: number, product: ProductUpdate): Promise<Product> => {
-    const res = await fetch(`${getApiBaseUrl()}/products/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(product),
-    });
-    
-    if (!res.ok) {
-      throw new Error('Failed to update product');
-    }
-    
-    return res.json();
-  },
-
-  deleteProduct: async (id: number): Promise<void> => {
-    const res = await fetch(`${getApiBaseUrl()}/products/${id}`, {
-      method: 'DELETE',
-    });
-    
-    if (!res.ok) {
-      throw new Error('Failed to delete product');
-    }
-  },
-
+  // --- Categorías y Marcas ---
   getCategories: async (): Promise<Category[]> => {
     const res = await fetch(`${getApiBaseUrl()}/categories/`);
     if (!res.ok) {
@@ -160,15 +266,13 @@ export const api = {
   },
 
   createCategory: async (category: CategoryCreate): Promise<Category> => {
-    const res = await fetch(`${getApiBaseUrl()}/categories/`, {
+    const res = await authFetch(`${getApiBaseUrl()}/categories/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(category),
     });
     if (!res.ok) {
-      throw new Error('Failed to create category');
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to create category');
     }
     return res.json();
   },
@@ -182,16 +286,14 @@ export const api = {
   },
 
   createBrand: async (brand: BrandCreate): Promise<Brand> => {
-    const res = await fetch(`${getApiBaseUrl()}/brands/`, {
+    const res = await authFetch(`${getApiBaseUrl()}/brands/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(brand),
     });
     if (!res.ok) {
-      throw new Error('Failed to create brand');
+      const err = typeof res.json === 'function' ? await res.json().catch(() => ({})) : {};
+      throw new Error(err.detail || 'Failed to create brand');
     }
     return res.json();
-  }
+  },
 };
