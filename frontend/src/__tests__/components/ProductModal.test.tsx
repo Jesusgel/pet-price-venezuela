@@ -53,7 +53,11 @@ const existingProduct: Product = {
   id: 5,
   name: 'Whiskas Atún',
   price_usd: 8.75,
+  price_usd_retail: null,
+  price_usd_cash: null,
+  price_usd_retail_cash: null,
   price_bs: 319.375,
+  price_bs_retail: null,
   category: 'gato',
   brand: 'Whiskas',
   unit: 'lata',
@@ -107,8 +111,8 @@ describe('ProductModal — submit', () => {
     render(<ProductModal {...defaultProps} onSubmit={onSubmit} />);
 
     await userEvent.type(screen.getByLabelText(/Nombre/i), 'Royal Canin');
-    await userEvent.clear(screen.getByLabelText(/Precio USD/i));
-    await userEvent.type(screen.getByLabelText(/Precio USD/i), '25.00');
+    await userEvent.clear(screen.getByLabelText(/Precio Saco/i));
+    await userEvent.type(screen.getByLabelText(/Precio Saco/i), '25.00');
     await userEvent.selectOptions(screen.getByLabelText(/Categoría/i), 'perro');
 
     await userEvent.click(screen.getByRole('button', { name: /Guardar/i }));

@@ -7,7 +7,11 @@ const mockProduct: Product = {
   id: 1,
   name: 'Dog Chow Adultos Razas Medianas y Grandes',
   price_usd: 15.5,
+  price_usd_retail: null,
+  price_usd_cash: null,
+  price_usd_retail_cash: null,
   price_bs: null,
+  price_bs_retail: null,
   category: 'Perros',
   brand: 'Purina',
   unit: 'kg',
@@ -62,11 +66,11 @@ describe('ProductDetailModal', () => {
       />
     );
 
-    // 15.50 USD
-    expect(screen.getByText('$15.50')).toBeInTheDocument();
+    // 15.50 USD (tarjeta principal y referencia de calculadora)
+    expect(screen.getAllByText('$15.50').length).toBeGreaterThanOrEqual(1);
 
-    // 15.50 * 36.50 = 565,75 Bs
-    expect(screen.getByText(/565,75/)).toBeInTheDocument();
+    // 15.50 * 36.50 = 565,75 Bs (tarjeta principal y referencia de calculadora)
+    expect(screen.getAllByText(/565,75/).length).toBeGreaterThanOrEqual(1);
   });
 
   it('muestra la tasa oficial y la fecha oficial formateada como DD/MM/YYYY', () => {
