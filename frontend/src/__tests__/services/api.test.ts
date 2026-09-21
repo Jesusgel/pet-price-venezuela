@@ -218,9 +218,9 @@ describe('getApiBaseUrl', () => {
     expect(getApiBaseUrl()).toBe('https://custom-backend.railway.app/api/v1');
   });
 
-  it('retorna localhost:8000 en entorno de desarrollo local', () => {
-    // En Vitest / jsdom window.location.hostname suele ser localhost
-    expect(getApiBaseUrl()).toBe('http://localhost:8000/api/v1');
+  it('retorna 127.0.0.1:8000 en entorno de desarrollo local', () => {
+    // En Vitest / jsdom window.location.hostname suele ser localhost y se resuelve a 127.0.0.1
+    expect(getApiBaseUrl()).toBe('http://127.0.0.1:8000/api/v1');
   });
 
   it('previene mixed content en HTTPS remoto y retorna origen seguro con advertencia', () => {
@@ -246,9 +246,9 @@ describe('getApiBaseUrl', () => {
     );
   });
 
-  it('retorna http://localhost:8000/api/v1 en SSR cuando window es undefined', () => {
+  it('retorna http://127.0.0.1:8000/api/v1 en SSR cuando window es undefined', () => {
     vi.stubGlobal('window', undefined);
-    expect(getApiBaseUrl()).toBe('http://localhost:8000/api/v1');
+    expect(getApiBaseUrl()).toBe('http://127.0.0.1:8000/api/v1');
   });
 });
 
