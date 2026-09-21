@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Product, ProductCreate, ProductUpdate } from '@/types';
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCategories, useBrands, useCreateCategory, useCreateBrand } from '@/hooks/useProducts';
 
@@ -19,20 +19,25 @@ type FormErrors = Partial<Record<'name' | 'price_usd' | 'category' | 'unit', str
 
 const NEW_OPTION_VALUE = '__NEW__';
 
+const emptyForm = (): ProductCreate => ({
+  name: '',
+  price_usd: 0,
+  price_usd_retail: null,
+  price_usd_cash: null,
+  price_usd_retail_cash: null,
+  category: '',
+  brand: '',
+  unit: 'unidad',
+  weight_kg: null,
+});
+
 export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, isLoading }: ProductModalProps) {
   const { data: categoriesList = [] } = useCategories();
   const { data: brandsList = [] } = useBrands();
   const createCategoryMutation = useCreateCategory();
   const createBrandMutation = useCreateBrand();
 
-  const [formData, setFormData] = useState<ProductCreate>({
-    name: '',
-    price_usd: 0,
-    category: '',
-    brand: '',
-    unit: 'unidad',
-    weight_kg: null,
-  });
+  const [formData, setFormData] = useState<ProductCreate>(emptyForm());
 
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -47,20 +52,16 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
       setFormData({
         name: initialData.name,
         price_usd: initialData.price_usd,
+        price_usd_retail: initialData.price_usd_retail ?? null,
+        price_usd_cash: initialData.price_usd_cash ?? null,
+        price_usd_retail_cash: initialData.price_usd_retail_cash ?? null,
         category: initialData.category,
         brand: initialData.brand || '',
         unit: initialData.unit,
         weight_kg: initialData.weight_kg || null,
       });
     } else {
-      setFormData({
-        name: '',
-        price_usd: 0,
-        category: '',
-        brand: '',
-        unit: 'unidad',
-        weight_kg: null,
-      });
+      setFormData(emptyForm());
     }
     setIsCreatingCategory(false);
     setNewCategoryName('');
@@ -73,7 +74,6 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
-
     if (!formData.name || formData.name.trim().length < 3) {
       newErrors.name = 'El nombre debe tener al menos 3 caracteres.';
     }
@@ -87,7 +87,6 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     if (!formData.unit) {
       newErrors.unit = 'Selecciona una unidad.';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -122,17 +121,24 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
       ? 'border-error bg-error/5 focus:ring-error/25 focus:border-error'
       : 'border-border bg-surface-container-low focus:ring-secondary/25 focus:border-secondary');
 
+  const priceInputCls =
+    'w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground ' +
+    'placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all';
+
   const labelCls = 'block text-sm font-semibold text-on-surface-variant mb-1';
+
+  const parseOptionalPrice = (val: string): number | null =>
+    val === '' ? null : parseFloat(val);
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-sm overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-          className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-border"
+          className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-border my-auto"
         >
           {/* Header */}
           <div className="flex justify-between items-center px-6 py-5 border-b border-border bg-surface-container-low">
@@ -168,10 +174,10 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
               )}
             </div>
 
-            {/* Precio USD + Categoría */}
+            {/* Precio Saco BCV + Categoría */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="modal-price-usd" className={labelCls}>Precio USD *</label>
+                <label htmlFor="modal-price-usd" className={labelCls}>Precio Saco (USD / BCV) *</label>
                 <input
                   id="modal-price-usd"
                   type="number"
@@ -233,9 +239,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                   >
                     <option value="">Seleccione...</option>
                     {categoriesList.map(cat => (
-                      <option key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </option>
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
                     ))}
                     <option value={NEW_OPTION_VALUE}>+ Crear nueva categoría...</option>
                   </select>
@@ -261,7 +265,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                       placeholder="Nueva marca..."
                       value={newBrandName}
                       onChange={e => setNewBrandName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all"
+                      className={priceInputCls}
                     />
                     <button
                       type="button"
@@ -284,13 +288,11 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                         setFormData({ ...formData, brand: e.target.value });
                       }
                     }}
-                    className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all"
+                    className={priceInputCls}
                   >
                     <option value="">Sin marca / Ninguna</option>
                     {brandsList.map(b => (
-                      <option key={b.id} value={b.name}>
-                        {b.name}
-                      </option>
+                      <option key={b.id} value={b.name}>{b.name}</option>
                     ))}
                     <option value={NEW_OPTION_VALUE}>+ Crear nueva marca...</option>
                   </select>
@@ -321,9 +323,11 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
               </div>
             </div>
 
-            {/* Peso */}
+            {/* Peso referencial */}
             <div>
-              <label htmlFor="modal-weight" className={labelCls}>Peso (kg)</label>
+              <label htmlFor="modal-weight" className={labelCls}>
+                Peso (kg) — <span className="font-normal text-muted-foreground">referencial</span>
+              </label>
               <input
                 id="modal-weight"
                 type="number"
@@ -331,9 +335,69 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                 min="0"
                 value={formData.weight_kg ?? ''}
                 onChange={e => setFormData({ ...formData, weight_kg: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface-container-low text-foreground placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all"
-                placeholder="Ej: 2.5"
+                className={priceInputCls}
+                placeholder="Ej: 40"
               />
+            </div>
+
+            {/* ── Precios Adicionales ── */}
+            <div className="border-t border-border pt-4">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                Precios adicionales <span className="font-normal normal-case">(opcionales)</span>
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Detal BCV */}
+                <div>
+                  <label htmlFor="modal-price-retail" className={labelCls}>
+                    Detal (USD / BCV)
+                  </label>
+                  <input
+                    id="modal-price-retail"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price_usd_retail ?? ''}
+                    onChange={e => setFormData({ ...formData, price_usd_retail: parseOptionalPrice(e.target.value) })}
+                    className={priceInputCls}
+                    placeholder="Ej: 2.00"
+                  />
+                </div>
+
+                {/* Saco Efectivo */}
+                <div>
+                  <label htmlFor="modal-price-cash" className={labelCls}>
+                    Saco (Efectivo USD)
+                  </label>
+                  <input
+                    id="modal-price-cash"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price_usd_cash ?? ''}
+                    onChange={e => setFormData({ ...formData, price_usd_cash: parseOptionalPrice(e.target.value) })}
+                    className={priceInputCls}
+                    placeholder="Ej: 30.00"
+                  />
+                </div>
+
+                {/* Detal Efectivo */}
+                <div>
+                  <label htmlFor="modal-price-retail-cash" className={labelCls}>
+                    Detal (Efectivo USD)
+                  </label>
+                  <input
+                    id="modal-price-retail-cash"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price_usd_retail_cash ?? ''}
+                    onChange={e => setFormData({ ...formData, price_usd_retail_cash: parseOptionalPrice(e.target.value) })}
+                    className={priceInputCls}
+                    placeholder="Ej: 1.00"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Acciones */}

@@ -120,4 +120,30 @@ describe('useExchangeRate', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['products'] });
     });
   });
+
+  it('aplica cooldown y no dispara bucles infinitos cuando rate_date es anterior a hoy', async () => {
+    // Tasa con fecha antigua (ej. fin de semana o feriado)
+    const oldRate = { ...mockRate, rate_date: '2020-01-01' };
+    vi.mocked(api.getExchangeRate).mockResolvedValue(oldRate);
+    const client = createTestQueryClient();
+    const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
+
+    const { rerender } = renderHook(() => useExchangeRate(), { wrapper: createWrapper(client) });
+
+    await waitFor(() => {
+      expect(client.getQueryData(['exchangeRate'])).toBeDefined();
+    });
+
+    // Múltiples re-renders no deben disparar invalidaciones continuas por el cooldown
+    rerender();
+    rerender();
+    rerender();
+
+    // Solo se debe haber intentado como máximo 1 vez debido al cooldown de 5 minutos
+    const exchangeRateInvalidations = invalidateSpy.mock.calls.filter(
+      (call) => Array.isArray(call) && JSON.stringify(call[0]) === JSON.stringify({ queryKey: ['exchangeRate'] })
+    );
+    expect(exchangeRateInvalidations.length).toBeLessThanOrEqual(1);
+  });
 });
+

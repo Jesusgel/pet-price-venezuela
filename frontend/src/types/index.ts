@@ -1,8 +1,12 @@
 export interface Product {
   id: number;
   name: string;
-  price_usd: number;
-  price_bs: number | null;
+  price_usd: number;                    // Saco BCV (USD)
+  price_usd_retail: number | null;      // Detal BCV (USD)
+  price_usd_cash: number | null;        // Saco Efectivo (USD)
+  price_usd_retail_cash: number | null; // Detal Efectivo (USD)
+  price_bs: number | null;             // Saco en Bs. (calculado con tasa BCV)
+  price_bs_retail: number | null;      // Detal en Bs. (calculado con tasa BCV)
   category: string;
   brand: string | null;
   unit: string;
@@ -16,10 +20,41 @@ export interface ExchangeRate {
   rate_date: string;
   source: string;
   fetched_at: string;
+  changed_by_user_id?: number | null;
 }
 
 export interface ExchangeRateUpdate {
   rate: number;
+}
+
+export interface RateImpactSample {
+  product_name: string;
+  price_usd: number;
+  old_price_bs: number;
+  new_price_bs: number;
+  diff_bs: number;
+}
+
+export interface RatePreviewResponse {
+  current_rate: number;
+  proposed_rate: number;
+  deviation_pct: number;
+  is_high_deviation: boolean;
+  sample_impacts: RateImpactSample[];
+}
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  role: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user: UserProfile;
 }
 
 export interface PaginatedRateResponse {
@@ -33,6 +68,9 @@ export interface PaginatedRateResponse {
 export interface ProductCreate {
   name: string;
   price_usd: number;
+  price_usd_retail?: number | null;
+  price_usd_cash?: number | null;
+  price_usd_retail_cash?: number | null;
   category: string;
   brand?: string | null;
   unit: string;
@@ -43,6 +81,9 @@ export interface ProductCreate {
 export interface ProductUpdate {
   name?: string;
   price_usd?: number;
+  price_usd_retail?: number | null;
+  price_usd_cash?: number | null;
+  price_usd_retail_cash?: number | null;
   category?: string;
   brand?: string | null;
   unit?: string;
@@ -84,4 +125,3 @@ export interface Brand {
 export interface BrandCreate {
   name: string;
 }
-
