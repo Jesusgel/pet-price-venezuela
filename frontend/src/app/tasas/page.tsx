@@ -51,7 +51,7 @@ export default function TasasPage() {
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
         <Link href="/dashboard" className="hover:text-primary transition-colors">
-          Dashboard
+          Panel de Control
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-outline" />
         <span className="text-primary font-semibold">Gestión de Tasas</span>

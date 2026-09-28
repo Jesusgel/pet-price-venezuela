@@ -38,6 +38,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
   const createBrandMutation = useCreateBrand();
 
   const [formData, setFormData] = useState<ProductCreate>(emptyForm());
+  const [priceUsdRaw, setPriceUsdRaw] = useState<string>('');
 
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -60,8 +61,10 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
         unit: initialData.unit,
         weight_kg: initialData.weight_kg || null,
       });
+      setPriceUsdRaw(initialData.price_usd ? String(initialData.price_usd) : '');
     } else {
       setFormData(emptyForm());
+      setPriceUsdRaw('');
     }
     setIsCreatingCategory(false);
     setNewCategoryName('');
@@ -77,7 +80,8 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
     if (!formData.name || formData.name.trim().length < 3) {
       newErrors.name = 'El nombre debe tener al menos 3 caracteres.';
     }
-    if (!formData.price_usd || Number(formData.price_usd) <= 0) {
+    const parsedPrice = parseFloat(priceUsdRaw);
+    if (!priceUsdRaw.trim() || isNaN(parsedPrice) || parsedPrice <= 0) {
       newErrors.price_usd = 'El precio debe ser mayor a $0.';
     }
     const finalCategory = isCreatingCategory ? newCategoryName : formData.category;
@@ -109,6 +113,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
 
     onSubmit({
       ...formData,
+      price_usd: parseFloat(priceUsdRaw),
       category: finalCategory,
       brand: finalBrand || null,
     });
@@ -183,9 +188,10 @@ export function ProductModal({ isOpen, onClose, onSubmit, initialData, title, is
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={formData.price_usd === undefined || Number.isNaN(formData.price_usd) ? '' : formData.price_usd}
+                  placeholder="Ej: 25.00"
+                  value={priceUsdRaw}
                   onChange={e => {
-                    setFormData({ ...formData, price_usd: e.target.value === '' ? 0 : parseFloat(e.target.value) });
+                    setPriceUsdRaw(e.target.value);
                     if (errors.price_usd) setErrors({ ...errors, price_usd: undefined });
                   }}
                   className={inputCls('price_usd')}
