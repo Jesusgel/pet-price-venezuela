@@ -76,7 +76,10 @@ async def test_login_brute_force_rate_limit(client: AsyncClient, admin_user: Use
         json={"username": "brute_force_target", "password": "bad"},
     )
     assert res.status_code == 429
-    assert "Demasiados intentos" in res.json()["detail"]
+    assert (
+        "Demasiadas peticiones" in res.json()["detail"]
+        or "Demasiados intentos" in res.json()["detail"]
+    )
 
 
 @pytest.mark.asyncio

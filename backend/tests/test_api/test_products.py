@@ -209,6 +209,12 @@ async def test_delete_product(client: AsyncClient, db_session, auth_headers: dic
     response_get = await client.get(f"/api/v1/products/{p.id}")
     assert response_get.status_code == 404
 
+    # Verificar que el catálogo público tampoco lista el producto borrado lógicamente
+    list_res = await client.get("/api/v1/products/")
+    assert list_res.status_code == 200
+    product_ids = [item["id"] for item in list_res.json()["items"]]
+    assert p.id not in product_ids
+
 
 @pytest.mark.asyncio
 async def test_create_and_get_product_with_multi_prices(client: AsyncClient, db_session, auth_headers: dict):

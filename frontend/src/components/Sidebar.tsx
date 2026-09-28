@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { LayoutGrid, Package, TrendingUp, X, Lock, LogOut, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { toast } from 'react-hot-toast';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -13,7 +16,7 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { label: 'Panel de Control', href: '/dashboard', icon: LayoutGrid },
   { label: 'Gestión de Productos', href: '/productos', icon: Package },
   { label: 'Gestión de Tasas', href: '/tasas', icon: TrendingUp },
 ];
@@ -21,6 +24,14 @@ const NAV_ITEMS = [
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, isAdmin, logout } = useAuth();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const handleConfirmLogout = () => {
+    logout();
+    setIsLogoutDialogOpen(false);
+    if (onClose) onClose();
+    toast.success('Sesión cerrada correctamente');
+  };
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-border shadow-sm">
@@ -101,10 +112,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               </span>
             </div>
             <button
-              onClick={() => {
-                logout();
-                if (onClose) onClose();
-              }}
+              type="button"
+              onClick={() => setIsLogoutDialogOpen(true)}
               className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-error hover:bg-error/10 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -132,6 +141,16 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
   return (
     <>
+      <ConfirmDialog
+        isOpen={isLogoutDialogOpen}
+        title="¿Cerrar sesión de administrador?"
+        description="Tendrás que ingresar nuevamente tus credenciales para administrar productos y tasas de cambio. ¿Deseas continuar?"
+        confirmLabel="Cerrar Sesión"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setIsLogoutDialogOpen(false)}
+      />
       {/* Desktop Fixed Sidebar */}
       <aside className="hidden md:block fixed top-0 left-0 bottom-0 w-[260px] z-40">
         {sidebarContent}

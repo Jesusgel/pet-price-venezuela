@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.core.limiter import limiter, rate_limit_exceeded_handler
 from app.api import auth, products, rates, categories, brands
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +25,11 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
 )
+
+# SlowAPI Rate Limiting Setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS Setup - Soporte para localhost, LAN y cualquier subdominio seguro de Vercel (*.vercel.app)
 cors_origins = (

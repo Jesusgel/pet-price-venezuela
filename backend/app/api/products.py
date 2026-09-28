@@ -1,6 +1,7 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
+from app.core.limiter import limiter
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate, PaginatedProductResponse
 from app.services.product_service import ProductService
 from app.api.deps import get_product_service, get_current_active_admin
@@ -10,7 +11,9 @@ router = APIRouter()
 
 @router.get("", response_model=PaginatedProductResponse)
 @router.get("/", response_model=PaginatedProductResponse)
+@limiter.limit("100/minute")
 async def read_products(
+    request: Request,
     search: Optional[str] = None,
     category: Optional[str] = None,
     page: int = Query(default=1, ge=1, description="Número de página"),

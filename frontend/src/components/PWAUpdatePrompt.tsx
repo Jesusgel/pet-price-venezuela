@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 
 interface PWAUpdatePromptProps {
   /** For testing purposes only: forces the prompt to be visible */
@@ -25,10 +26,6 @@ export function PWAUpdatePrompt({ testForceShow = false, onUpdate }: PWAUpdatePr
     }
   }, [waitingWorker, onUpdate]);
 
-  const handleDismiss = () => {
-    setShowPrompt(false);
-  };
-
   useEffect(() => {
     if (testForceShow) {
       return;
@@ -37,7 +34,6 @@ export function PWAUpdatePrompt({ testForceShow = false, onUpdate }: PWAUpdatePr
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
       return;
     }
-
 
     let isMounted = true;
 
@@ -104,57 +100,39 @@ export function PWAUpdatePrompt({ testForceShow = false, onUpdate }: PWAUpdatePr
   }
 
   return (
-    <aside
-      aria-label="Notificación de actualización de la aplicación"
-      role="alert"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-in fade-in slide-in-from-bottom-4 duration-300"
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="pwa-update-title"
+      aria-describedby="pwa-update-desc"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
     >
-      <div className="bg-surface/95 dark:bg-stone-900/95 backdrop-blur-md border border-amber-800/20 dark:border-amber-700/30 rounded-2xl p-4 shadow-xl flex items-center justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span className="text-xl select-none" aria-hidden="true">
-            ✨
-          </span>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-foreground leading-tight">
-              Nueva versión disponible
-            </p>
-            <p className="text-xs text-on-surface-variant mt-0.5 leading-snug">
-              Actualiza para ver las últimas mejoras del catálogo y precios.
-            </p>
-          </div>
+      <div className="bg-white dark:bg-stone-900 border border-border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+          <Sparkles className="w-8 h-8" />
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="space-y-2">
+          <h3 id="pwa-update-title" className="text-xl sm:text-2xl font-bold text-primary font-display">
+            Actualización Requerida
+          </h3>
+          <p id="pwa-update-desc" className="text-sm text-muted-foreground leading-relaxed">
+            Hemos desplegado una nueva versión con mejoras críticas en el catálogo, cálculo de precios y seguridad. Por favor actualiza para continuar operando.
+          </p>
+        </div>
+
+        <div className="pt-2">
           <button
             type="button"
             onClick={handleUpdate}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-3 py-2 rounded-xl transition-all shadow-sm active:scale-95"
+            className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md active:scale-95 text-sm"
           >
-            Actualizar
-          </button>
-          <button
-            type="button"
-            onClick={handleDismiss}
-            aria-label="Cerrar notificación"
-            className="text-on-surface-variant/70 hover:text-foreground p-1 rounded-lg transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <RefreshCw className="w-4 h-4" />
+            Actualizar Ahora
           </button>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
 

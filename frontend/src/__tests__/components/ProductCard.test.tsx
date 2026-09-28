@@ -121,6 +121,14 @@ describe('ProductCard — precio en Bs.', () => {
     render(<ProductCard product={baseProduct} rate={undefined} />);
     expect(screen.getByText('No disponible')).toBeInTheDocument();
   });
+
+  it('muestra un skeleton shimmer en lugar del precio BCV cuando isRateFresh es false', () => {
+    const { container } = render(<ProductCard product={baseProduct} rate={36.5} isRateFresh={false} />);
+    // No debe mostrar el precio calculado en Bs para evitar flash of stale data
+    expect(screen.queryByText('Bs. 456,25')).not.toBeInTheDocument();
+    // Debe renderizar el skeleton con animate-pulse
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+  });
 });
 
 // ---------------------------------------------------------------------------

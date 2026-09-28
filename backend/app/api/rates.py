@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.deps import get_current_active_admin, get_dolar_service, get_rate_service
+from app.core.limiter import limiter
 from app.models.user import User
 from app.schemas.exchange_rate import (
     ExchangeRateResponse,
@@ -16,13 +17,20 @@ router = APIRouter()
 
 @router.get("", response_model=ExchangeRateResponse)
 @router.get("/", response_model=ExchangeRateResponse)
-async def read_rate(dolar_service: DolarService = Depends(get_dolar_service)):
+@limiter.limit("100/minute")
+async def read_rate(
+    request: Request,
+    dolar_service: DolarService = Depends(get_dolar_service),
+    rate_service: RateService = Depends(get_rate_service),
+):
     """Obtiene la tasa de cambio vigente, sincronizándola automáticamente si es un nuevo día o está vencida (Público)."""
-    return await dolar_service.get_or_sync_latest_rate()
+    return await rate_service.get_current_rate(dolar_service)
 
 
 @router.post("/update-rate", response_model=ExchangeRateResponse)
+@limiter.limit("10/minute")
 async def refresh_rate(
+    request: Request,
     dolar_service: DolarService = Depends(get_dolar_service),
     _admin: User = Depends(get_current_active_admin),
 ):
@@ -58,5 +66,7 @@ async def update_current_rate(
 ):
     """Edita la tasa de cambio actual registrando auditoría del administrador (Admin)."""
     return await rate_service.update_current_rate(
-        rate_in, changed_by_user_id=current_admin.id
+        rate_in,
+        changed_by_user_id=current_admin.id,
+        changed_by_username=current_admin.username,
     )
