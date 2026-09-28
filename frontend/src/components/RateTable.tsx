@@ -2,6 +2,7 @@
 
 import { ExchangeRate } from '@/types';
 import { motion } from 'framer-motion';
+import { User } from 'lucide-react';
 
 interface RateTableProps {
   rates: ExchangeRate[];
@@ -63,15 +64,23 @@ export function RateTable({ rates, isLoading }: RateTableProps) {
                     {item.rate_date.split('-').reverse().join('/')}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide border ${
-                        isManual
-                          ? 'bg-amber-50 text-amber-800 border-amber-200'
-                          : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      }`}
-                    >
-                      {item.source}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide border ${
+                          isManual
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        }`}
+                      >
+                        {item.source}
+                      </span>
+                      {isManual && item.changed_by_username && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                          <User className="w-3 h-3 text-amber-600 shrink-0" />
+                          @{item.changed_by_username}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-xs text-muted-foreground">
                     {new Date(item.fetched_at).toLocaleString('es-VE')}

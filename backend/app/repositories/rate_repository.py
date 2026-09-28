@@ -1,11 +1,12 @@
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from sqlalchemy import func, desc
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.exchange_rate import ExchangeRate
+from app.models.user import User
 
 class ExchangeRateRepository:
     def __init__(self, session: AsyncSession):
@@ -13,6 +14,11 @@ class ExchangeRateRepository:
 
     async def get_latest(self) -> Optional[ExchangeRate]:
         statement = select(ExchangeRate).order_by(ExchangeRate.rate_date.desc(), ExchangeRate.id.desc()).limit(1)
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def get_username_by_id(self, user_id: int) -> Optional[str]:
+        statement = select(User.username).where(User.id == user_id)
         result = await self.session.exec(statement)
         return result.first()
 
@@ -29,9 +35,10 @@ class ExchangeRateRepository:
 
     async def get_all(
         self, skip: int = 0, limit: int = 20
-    ) -> List[ExchangeRate]:
+    ) -> List[Tuple[ExchangeRate, Optional[str]]]:
         statement = (
-            select(ExchangeRate)
+            select(ExchangeRate, User.username)
+            .outerjoin(User, ExchangeRate.changed_by_user_id == User.id)
             .order_by(desc(ExchangeRate.rate_date), desc(ExchangeRate.id))
             .offset(skip)
             .limit(limit)

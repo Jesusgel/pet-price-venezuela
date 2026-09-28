@@ -16,9 +16,12 @@ router = APIRouter()
 
 @router.get("", response_model=ExchangeRateResponse)
 @router.get("/", response_model=ExchangeRateResponse)
-async def read_rate(dolar_service: DolarService = Depends(get_dolar_service)):
+async def read_rate(
+    dolar_service: DolarService = Depends(get_dolar_service),
+    rate_service: RateService = Depends(get_rate_service),
+):
     """Obtiene la tasa de cambio vigente, sincronizándola automáticamente si es un nuevo día o está vencida (Público)."""
-    return await dolar_service.get_or_sync_latest_rate()
+    return await rate_service.get_current_rate(dolar_service)
 
 
 @router.post("/update-rate", response_model=ExchangeRateResponse)
@@ -58,5 +61,7 @@ async def update_current_rate(
 ):
     """Edita la tasa de cambio actual registrando auditoría del administrador (Admin)."""
     return await rate_service.update_current_rate(
-        rate_in, changed_by_user_id=current_admin.id
+        rate_in,
+        changed_by_user_id=current_admin.id,
+        changed_by_username=current_admin.username,
     )

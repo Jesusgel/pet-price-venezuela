@@ -12,6 +12,7 @@ class ExchangeRateResponse(BaseModel):
     source: str
     fetched_at: datetime
     changed_by_user_id: Optional[int] = None
+    changed_by_username: Optional[str] = None
 
 
 class ExchangeRateUpdate(BaseModel):

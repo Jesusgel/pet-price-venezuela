@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 import math
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from fastapi import HTTPException
 
 from app.core.config import settings
@@ -16,6 +16,9 @@ from app.schemas.exchange_rate import (
 )
 from app.services.dolar_service import get_today_in_venezuela
 
+if TYPE_CHECKING:
+    from app.services.dolar_service import DolarService
+
 
 class RateService:
     def __init__(
@@ -26,17 +29,30 @@ class RateService:
         self.rate_repo = rate_repo
         self.product_repo = product_repo
 
+    async def get_current_rate(self, dolar_service: "DolarService") -> ExchangeRateResponse:
+        rate = await dolar_service.get_or_sync_latest_rate()
+        response = ExchangeRateResponse.model_validate(rate, from_attributes=True)
+        if rate and rate.changed_by_user_id:
+            response.changed_by_username = await self.rate_repo.get_username_by_id(rate.changed_by_user_id)
+        return response
+
     async def get_all_rates(
         self, page: int = 1, limit: int = 20
     ) -> PaginatedExchangeRateResponse:
         skip = (page - 1) * limit
         total = await self.rate_repo.count_all()
-        rates = await self.rate_repo.get_all(skip, limit)
+        rows = await self.rate_repo.get_all(skip, limit)
 
         total_pages = max(math.ceil(total / limit) if limit > 0 else 1, 1)
 
+        items = []
+        for rate, username in rows:
+            item = ExchangeRateResponse.model_validate(rate, from_attributes=True)
+            item.changed_by_username = username
+            items.append(item)
+
         return PaginatedExchangeRateResponse(
-            items=[ExchangeRateResponse.model_validate(r, from_attributes=True) for r in rates],
+            items=items,
             total=total,
             page=page,
             limit=limit,
@@ -44,7 +60,10 @@ class RateService:
         )
 
     async def update_current_rate(
-        self, data: ExchangeRateUpdate, changed_by_user_id: Optional[int] = None
+        self,
+        data: ExchangeRateUpdate,
+        changed_by_user_id: Optional[int] = None,
+        changed_by_username: Optional[str] = None,
     ) -> ExchangeRateResponse:
         latest = await self.rate_repo.get_latest()
         if not latest:
@@ -71,7 +90,11 @@ class RateService:
             update_data["changed_by_user_id"] = changed_by_user_id
 
         updated = await self.rate_repo.update(latest, update_data)
-        return ExchangeRateResponse.model_validate(updated, from_attributes=True)
+        response = ExchangeRateResponse.model_validate(updated, from_attributes=True)
+        if changed_by_username is None and changed_by_user_id is not None:
+            changed_by_username = await self.rate_repo.get_username_by_id(changed_by_user_id)
+        response.changed_by_username = changed_by_username
+        return response
 
     async def preview_rate_change(self, data: ExchangeRateUpdate) -> RatePreviewResponse:
         latest = await self.rate_repo.get_latest()

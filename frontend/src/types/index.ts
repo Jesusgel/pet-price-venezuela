@@ -21,6 +21,7 @@ export interface ExchangeRate {
   source: string;
   fetched_at: string;
   changed_by_user_id?: number | null;
+  changed_by_username?: string | null;
 }
 
 export interface ExchangeRateUpdate {
