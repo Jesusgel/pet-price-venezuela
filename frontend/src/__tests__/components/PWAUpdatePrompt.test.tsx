@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt';
 
-describe('PWAUpdatePrompt', () => {
+describe('PWAUpdatePrompt (REQ-019)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -12,32 +12,32 @@ describe('PWAUpdatePrompt', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renderiza el banner con textos y botones cuando hay actualización disponible', () => {
+  it('renderiza el modal bloqueante con advertencia cuando hay actualización disponible', () => {
     render(<PWAUpdatePrompt testForceShow={true} />);
 
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByText('Nueva versión disponible')).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.getByText('Actualización Requerida')).toBeInTheDocument();
     expect(
-      screen.getByText(/Actualiza para ver las últimas mejoras del catálogo y precios/i)
+      screen.getByText(/Hemos desplegado una nueva versión con mejoras críticas/i)
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Actualizar/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Cerrar notificación/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Actualizar Ahora/i })).toBeInTheDocument();
   });
 
-  it('permite descartar el banner al presionar el botón de cerrar', () => {
+  it('no contiene ningún botón para cerrar o evadir la actualización forzosa', () => {
     render(<PWAUpdatePrompt testForceShow={true} />);
 
-    const closeButton = screen.getByRole('button', { name: /Cerrar notificación/i });
-    fireEvent.click(closeButton);
-
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    // Solo debe existir el botón de Actualizar Ahora
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /Cerrar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Descartar/i })).not.toBeInTheDocument();
   });
 
-  it('ejecuta el callback onUpdate al presionar Actualizar', () => {
+  it('ejecuta el callback onUpdate al presionar Actualizar Ahora', () => {
     const onUpdateMock = vi.fn();
     render(<PWAUpdatePrompt testForceShow={true} onUpdate={onUpdateMock} />);
 
-    const updateButton = screen.getByRole('button', { name: /Actualizar/i });
+    const updateButton = screen.getByRole('button', { name: /Actualizar Ahora/i });
     fireEvent.click(updateButton);
 
     expect(onUpdateMock).toHaveBeenCalledTimes(1);
