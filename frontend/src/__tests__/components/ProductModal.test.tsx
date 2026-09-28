@@ -95,8 +95,31 @@ describe('ProductModal — initialData', () => {
   it('muestra el formulario vacío cuando no hay initialData', () => {
     render(<ProductModal {...defaultProps} />);
 
-    const nameInput = screen.getByLabelText(/Nombre/i);
-    expect((nameInput as HTMLInputElement).value).toBe('');
+    const nameInput = screen.getByLabelText(/Nombre/i) as HTMLInputElement;
+    const priceInput = screen.getByLabelText(/Precio Saco/i) as HTMLInputElement;
+
+    expect(nameInput.value).toBe('');
+    expect(priceInput.value).toBe('');
+    expect(priceInput.placeholder).toBe('Ej: 25.00');
+  });
+
+  it('permite tipear el precio sin anteponer 0 y valida si queda vacío (AC-01)', async () => {
+    render(<ProductModal {...defaultProps} />);
+
+    const priceInput = screen.getByLabelText(/Precio Saco/i) as HTMLInputElement;
+    expect(priceInput.value).toBe('');
+
+    // Al tipear 25, no debe anteponerse un 0
+    await userEvent.type(priceInput, '25');
+    expect(priceInput.value).toBe('25');
+
+    // Al borrar, debe quedar vacío
+    await userEvent.clear(priceInput);
+    expect(priceInput.value).toBe('');
+
+    // Al enviar vacío, debe mostrar error de validación
+    await userEvent.click(screen.getByRole('button', { name: /Guardar/i }));
+    expect(screen.getByText('El precio debe ser mayor a $0.')).toBeInTheDocument();
   });
 });
 

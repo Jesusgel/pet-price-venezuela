@@ -186,7 +186,7 @@ export default function ProductosPage() {
       {/* Breadcrumb */}
       <nav className="hidden md:flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
         <Link href="/dashboard" className="hover:text-primary transition-colors">
-          Dashboard
+          Panel de Control
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-outline" />
         <span className="text-primary font-semibold">Gestión de Productos</span>
@@ -412,6 +412,18 @@ export default function ProductosPage() {
           handleDeleteProduct(id);
         }}
       />
+
+      {/* Floating Action Button (FAB) para móviles (AC-03) */}
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={handleCreateProduct}
+          aria-label="Añadir Producto"
+          className="fixed bottom-6 right-6 z-40 md:hidden w-14 h-14 rounded-full bg-secondary hover:bg-secondary/90 text-white shadow-xl hover:shadow-2xl active:scale-95 transition-all flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-secondary/30"
+        >
+          <Plus className="w-7 h-7" />
+        </button>
+      )}
     </main>
   );
 }

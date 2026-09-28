@@ -148,8 +148,8 @@ export function ProductRow({ product, rate, isRateFresh = true, onEdit, onDelete
         )}
       </div>
 
-      {/* Acciones */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Acciones (Desktop: visibles directamente; Móvil: Swipe o Modal de Detalle) */}
+      <div className="hidden md:flex items-center gap-1.5 shrink-0">
         {onEdit && (
           <button
             id={`edit-product-${product.id}`}
