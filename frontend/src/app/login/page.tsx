@@ -8,6 +8,7 @@ import { Lock, User, ArrowRight, ShieldCheck, ArrowLeft, LogOut } from 'lucide-r
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +17,13 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const handleConfirmLogout = () => {
+    logout();
+    setIsLogoutDialogOpen(false);
+    toast.success('Sesión cerrada correctamente');
+  };
 
   // Redirigir automáticamente si ya es admin
   useEffect(() => {
@@ -98,15 +106,24 @@ export default function LoginPage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <button
-                onClick={() => {
-                  logout();
-                  toast.success('Sesión cerrada correctamente');
-                }}
+                type="button"
+                onClick={() => setIsLogoutDialogOpen(true)}
                 className="w-full py-3 rounded-xl font-semibold text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Cerrar Sesión</span>
               </button>
+
+              <ConfirmDialog
+                isOpen={isLogoutDialogOpen}
+                title="¿Cerrar sesión de administrador?"
+                description="Tendrás que ingresar nuevamente tus credenciales para administrar productos y tasas de cambio. ¿Deseas continuar?"
+                confirmLabel="Cerrar Sesión"
+                cancelLabel="Cancelar"
+                variant="danger"
+                onConfirm={handleConfirmLogout}
+                onCancel={() => setIsLogoutDialogOpen(false)}
+              />
             </div>
           </div>
         ) : (
