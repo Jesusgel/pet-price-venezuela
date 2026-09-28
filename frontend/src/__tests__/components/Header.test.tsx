@@ -93,4 +93,18 @@ describe('Header — estado exitoso', () => {
     // El texto de marca también debe estar presente
     expect(screen.getByText('Samán')).toBeInTheDocument();
   });
+
+  it('muestra el indicador "Actualizando..." cuando isFetching && isStale = true', () => {
+    vi.mocked(useExchangeRate).mockReturnValue({
+      data: { rate: 36.5, rate_date: '2024-01-15', source: 'BCV', fetched_at: '2024-01-15T12:00:00Z' },
+      isLoading: false,
+      isError: false,
+      isFetching: true,
+      isStale: true,
+    } as unknown as ReturnType<typeof useExchangeRate>);
+
+    render(<Header />);
+
+    expect(screen.getByText(/Actualizando/i)).toBeInTheDocument();
+  });
 });

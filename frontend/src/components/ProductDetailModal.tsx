@@ -44,8 +44,8 @@ export function ProductDetailModal({
   if (!isOpen || !product) return null;
 
   const currentRate = rateData?.rate;
-  const priceBs = product.price_bs || (currentRate ? product.price_usd * currentRate : null);
-  const priceBsRetail = product.price_bs_retail || (currentRate && product.price_usd_retail ? product.price_usd_retail * currentRate : null);
+  const priceBs = currentRate ? Number((product.price_usd * currentRate).toFixed(2)) : (product.price_bs ?? null);
+  const priceBsRetail = currentRate && product.price_usd_retail ? Number((product.price_usd_retail * currentRate).toFixed(2)) : (product.price_bs_retail ?? null);
   const visual = getCategoryVisual(product.category);
 
   const formattedRateDate = rateData?.rate_date
