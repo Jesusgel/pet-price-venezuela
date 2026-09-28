@@ -13,17 +13,45 @@ export function getVenezuelaDate(): string {
   return vetDate.toISOString().split('T')[0];
 }
 
+// Estado a nivel de sesión del navegador para validar frescura tras comprobación de red
+let sessionRateVerified = false;
+
+export function resetSessionRateVerification() {
+  sessionRateVerified = false;
+}
+
 export function useExchangeRate() {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ['exchangeRate'],
     queryFn: () => api.getExchangeRate(),
+    networkMode: 'online', // AC-01: Sobrescribe el offlineFirst global para requerir validación de red
     staleTime: 1000 * 30, // 30 segundos
     refetchInterval: 1000 * 30, // Polling cada 30s en segundo plano
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: 3,
   });
+
+  // Marca como verificada en red cuando la query resuelve un fetch exitoso en esta sesión
+  useEffect(() => {
+    if (query.isSuccess && (query.isFetchedAfterMount || query.dataUpdatedAt > 0)) {
+      sessionRateVerified = true;
+    }
+  }, [query.isSuccess, query.isFetchedAfterMount, query.dataUpdatedAt]);
+
+  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
+  // AC-03: Compuerta de frescura (isRateFresh)
+  // Se considera fresca si se verificó con el servidor en esta sesión,
+  // o si el dispositivo está sin conexión a internet y hay datos cacheados
+  const isRateFresh = Boolean(
+    query.data && (
+      sessionRateVerified ||
+      (query.isFetchedAfterMount && query.isSuccess) ||
+      !isOnline
+    )
+  );
 
   const prevRateRef = useRef<number | undefined>(undefined);
   const prevDateRef = useRef<string | undefined>(undefined);
@@ -59,6 +87,7 @@ export function useExchangeRate() {
     const currentRateDate = currentRateData?.rate_date;
     if (currentRateDate && currentRateDate < getVenezuelaDate()) {
       lastDayCheckRef.current = now;
+      sessionRateVerified = false;
       queryClient.invalidateQueries({ queryKey: ['exchangeRate'] });
     }
   }, [queryClient]);
@@ -81,7 +110,10 @@ export function useExchangeRate() {
     };
   }, [checkDayChange]);
 
-  return query;
+  return {
+    ...query,
+    isRateFresh,
+  };
 }
 
 export function useRateHistory(page: number = 1) {

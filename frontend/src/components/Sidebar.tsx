@@ -13,7 +13,7 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { label: 'Panel de Control', href: '/dashboard', icon: LayoutGrid },
   { label: 'Gestión de Productos', href: '/productos', icon: Package },
   { label: 'Gestión de Tasas', href: '/tasas', icon: TrendingUp },
 ];

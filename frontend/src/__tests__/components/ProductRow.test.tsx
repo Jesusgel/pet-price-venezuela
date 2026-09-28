@@ -72,6 +72,10 @@ describe('ProductRow Component', () => {
 
     fireEvent.click(deleteSwipeBtn);
     expect(handleDelete).toHaveBeenCalledWith(mockProduct.id);
+
+    // Los botones directos de acción deben estar ocultos en móvil (AC-02)
+    const desktopEditBtn = screen.getByTitle('Editar');
+    expect(desktopEditBtn.parentElement).toHaveClass('hidden', 'md:flex');
   });
 
   it('llama a onSelect cuando se hace clic en la fila', () => {

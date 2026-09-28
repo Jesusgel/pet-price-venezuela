@@ -9,12 +9,13 @@ import { getCategoryVisual } from '@/utils/categoryVisuals';
 interface ProductCardProps {
   product: Product;
   rate: number | undefined;
+  isRateFresh?: boolean;
   onEdit?: (product: Product) => void;
   onDelete?: (id: number) => void;
   onSelect?: (product: Product) => void;
 }
 
-export function ProductCard({ product, rate, onEdit, onDelete, onSelect }: ProductCardProps) {
+export function ProductCard({ product, rate, isRateFresh = true, onEdit, onDelete, onSelect }: ProductCardProps) {
   // Prioriza el cálculo dinámico con la tasa activa en memoria para recálculo instantáneo
   const priceBs = rate ? Number((product.price_usd * rate).toFixed(2)) : (product.price_bs ?? null);
   const visual = getCategoryVisual(product.category);
@@ -108,7 +109,9 @@ export function ProductCard({ product, rate, onEdit, onDelete, onSelect }: Produ
 
           <div className="flex flex-col items-end text-right">
             <span className="text-xs font-medium text-muted-foreground">Precio BCV</span>
-            {priceBs !== null ? (
+            {!isRateFresh ? (
+              <div className="h-6 w-20 bg-surface-container-high animate-pulse rounded my-0.5" title="Verificando tasa oficial..." />
+            ) : priceBs !== null ? (
               <span className="text-lg font-bold text-secondary">
                 {formatBs(priceBs)}
               </span>

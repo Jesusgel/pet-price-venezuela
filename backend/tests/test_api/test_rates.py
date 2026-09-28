@@ -61,6 +61,7 @@ async def test_read_rate_history(client: AsyncClient, seed_rate):
     assert "items" in data
     assert data["total"] >= 1
     assert Decimal(data["items"][0]["rate"]) == Decimal("38.5")
+    assert data["items"][0]["changed_by_username"] is None
 
 @pytest.mark.asyncio
 async def test_update_current_rate(client: AsyncClient, seed_rate, auth_headers: dict):
@@ -76,12 +77,20 @@ async def test_update_current_rate(client: AsyncClient, seed_rate, auth_headers:
     data = response.json()
     assert Decimal(data["rate"]) == Decimal("42.50")
     assert data["source"] == "manual"
+    assert data["changed_by_user_id"] is not None
+    assert data["changed_by_username"] == "testadmin"
 
-    # GET /rate must return manual rate without trying to auto-update for today
+    # GET /rate must return manual rate with changed_by_username without trying to auto-update for today
     get_res = await client.get("/api/v1/rate/")
     assert get_res.status_code == 200
     assert Decimal(get_res.json()["rate"]) == Decimal("42.50")
     assert get_res.json()["source"] == "manual"
+    assert get_res.json()["changed_by_username"] == "testadmin"
+
+    # GET /rate/history must reflect changed_by_username for manual rate
+    hist_res = await client.get("/api/v1/rate/history")
+    assert hist_res.status_code == 200
+    assert hist_res.json()["items"][0]["changed_by_username"] == "testadmin"
 
 @pytest.mark.asyncio
 async def test_update_current_rate_sanity_checks(client: AsyncClient, seed_rate, auth_headers: dict):

@@ -136,10 +136,9 @@ Estas convenciones son **no negociables** independientemente del dominio:
 - Toda configuración sensible va en variables de entorno (`.env`).
 - El archivo `.env` **nunca** se commitea al repositorio (está en `.gitignore`).
 
-### 📝 Control de Cambios
-- Antes de modificar cualquier archivo, **mostrar el plan de acción** al usuario.
-- Mostrar las diferencias (diff) de los cambios propuestos.
-- **No modificar nada sin consentimiento explícito del usuario.**
+### 📝 Control de Cambios (Flujo de Dos Turnos)
+- **Turno 1 (Planificación / Solo Lectura):** Mostrar el diagnóstico, plan de acción y archivos afectados al usuario. Cero edición de código. Freno obligatorio.
+- **Turno 2 (Ejecución):** Modificar código SOLO tras aprobación explícita del usuario ("procede", "adelante", "ejecuta", "dale"). Al recibir la orden, implementar de forma autónoma según el plan y verificar con tests (`pytest` / `npm test`).
 
 ### 🧪 Calidad de Código
 - Backend: todo el código debe pasar `ruff check` sin errores.

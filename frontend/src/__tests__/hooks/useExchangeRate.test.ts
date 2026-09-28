@@ -10,7 +10,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 import { api } from '@/services/api';
-import { useExchangeRate, getVenezuelaDate } from '@/hooks/useExchangeRate';
+import { useExchangeRate, getVenezuelaDate, resetSessionRateVerification } from '@/hooks/useExchangeRate';
 import { ExchangeRate } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -144,6 +144,19 @@ describe('useExchangeRate', () => {
       (call) => Array.isArray(call) && JSON.stringify(call[0]) === JSON.stringify({ queryKey: ['exchangeRate'] })
     );
     expect(exchangeRateInvalidations.length).toBeLessThanOrEqual(1);
+  });
+
+  it('expone isRateFresh en true una vez que la tasa ha sido verificada contra la red', async () => {
+    resetSessionRateVerification();
+    vi.mocked(api.getExchangeRate).mockResolvedValue(mockRate);
+    const client = createTestQueryClient();
+
+    const { result } = renderHook(() => useExchangeRate(), { wrapper: createWrapper(client) });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.isRateFresh).toBe(true);
+    });
   });
 });
 
