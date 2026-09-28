@@ -91,3 +91,13 @@ def admin_token(admin_user):
 def auth_headers(admin_token):
     """Retorna los encabezados HTTP con Bearer token para peticiones autenticadas."""
     return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Limpia los contadores de rate limit antes y después de cada test."""
+    from app.core.limiter import limiter
+
+    limiter.reset()
+    yield
+    limiter.reset()
