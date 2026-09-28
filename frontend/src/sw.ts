@@ -45,7 +45,7 @@ const serwist = new Serwist({
         networkTimeoutSeconds: 3,
         plugins: [
           new CacheableResponsePlugin({ statuses: [0, 200] }),
-          new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 43200 }),
+          new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 7200 }),
         ],
       }),
     },

@@ -7,10 +7,11 @@ import { ProductRowSkeleton } from '@/components/ProductRowSkeleton';
 import { ViewToggle } from '@/components/ViewToggle';
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useQueryClient } from '@tanstack/react-query';
 import { useViewMode } from '@/hooks/useViewMode';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus, Search, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus, RefreshCw, Search, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { ProductModal } from '@/components/ProductModal';
 import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { toast } from 'react-hot-toast';
@@ -29,6 +30,7 @@ const SORT_OPTIONS: { label: string; field: SortField; order: SortOrder }[] = [
 
 export default function ProductosPage() {
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -40,6 +42,50 @@ export default function ProductosPage() {
   const { viewMode, setViewMode } = useViewMode();
   const isMobile = useIsMobile();
   const effectiveViewMode = isMobile ? 'list' : viewMode;
+
+  // Pull-to-refresh móvil coordinado (AC-05)
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartYRef = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (typeof window !== 'undefined' && window.scrollY <= 5) {
+      touchStartYRef.current = e.touches[0].clientY;
+    } else {
+      touchStartYRef.current = 0;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartYRef.current === 0 || isRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartYRef.current;
+    if (deltaY > 0 && typeof window !== 'undefined' && window.scrollY <= 5) {
+      setPullDistance(Math.min(70, deltaY * 0.4));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance >= 45 && !isRefreshing) {
+      setIsRefreshing(true);
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['exchangeRate'] }),
+          queryClient.invalidateQueries({ queryKey: ['products'] }),
+        ]);
+        toast.success('Catálogo y tasa actualizados');
+      } catch {
+        toast.error('Error al actualizar datos');
+      } finally {
+        setIsRefreshing(false);
+        setPullDistance(0);
+        touchStartYRef.current = 0;
+      }
+    } else {
+      setPullDistance(0);
+      touchStartYRef.current = 0;
+    }
+  };
 
   const { field: sortBy, order: sortOrder } = {
     field: SORT_OPTIONS[sortKey].field,
@@ -65,7 +111,7 @@ export default function ProductosPage() {
     sortOrder,
   );
   const { data: categoriesList = [] } = useCategories();
-  const { data: rateData } = useExchangeRate();
+  const { data: rateData, isRateFresh } = useExchangeRate();
 
   const products = paginatedData?.items ?? [];
   const totalPages = paginatedData?.total_pages ?? 1;
@@ -112,7 +158,31 @@ export default function ProductosPage() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+    <main
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in relative"
+    >
+      {/* Indicador táctil Pull-to-Refresh coordinado (AC-05) */}
+      {(pullDistance > 0 || isRefreshing) && (
+        <div
+          style={{ height: `${isRefreshing ? 48 : pullDistance}px` }}
+          className="flex justify-center items-center overflow-hidden transition-all duration-150 mb-2"
+        >
+          <div className="flex items-center gap-2 text-xs font-semibold text-secondary bg-surface-container px-3.5 py-1.5 rounded-full shadow-xs border border-border">
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>
+              {isRefreshing
+                ? 'Actualizando catálogo y tasa...'
+                : pullDistance >= 45
+                ? 'Suelta para actualizar'
+                : 'Desliza para actualizar'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <nav className="hidden md:flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
         <Link href="/dashboard" className="hover:text-primary transition-colors">
@@ -219,6 +289,7 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
+                isRateFresh={isRateFresh}
                 onSelect={setSelectedProduct}
                 onEdit={isAdmin ? handleEditProduct : undefined}
                 onDelete={isAdmin ? handleDeleteProduct : undefined}
@@ -246,6 +317,7 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
+                isRateFresh={isRateFresh}
                 onSelect={setSelectedProduct}
                 onEdit={isAdmin ? handleEditProduct : undefined}
                 onDelete={isAdmin ? handleDeleteProduct : undefined}
