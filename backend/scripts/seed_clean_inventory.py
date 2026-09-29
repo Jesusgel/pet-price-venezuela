@@ -1,6 +1,6 @@
 """Script de limpieza y carga del inventario depurado desde `inventory_clean.csv`.
 
-Vacia la tabla de productos e inserta los 48 productos normalizados,
+Vacia la tabla de productos e inserta los 50 productos normalizados,
 creando y asociando también las categorías correspondientes.
 """
 
