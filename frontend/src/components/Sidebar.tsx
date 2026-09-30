@@ -113,7 +113,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             </div>
             <button
               type="button"
-              onClick={() => setIsLogoutDialogOpen(true)}
+              onClick={() => {
+                setIsLogoutDialogOpen(true);
+                if (onClose) onClose();
+              }}
               className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-error hover:bg-error/10 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
