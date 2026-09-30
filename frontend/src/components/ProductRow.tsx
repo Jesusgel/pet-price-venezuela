@@ -22,7 +22,7 @@ export function ProductRow({ product, rate, isRateFresh = true, onEdit, onDelete
   const hasActions = Boolean(onEdit || onDelete);
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-surface-container-low group/row-wrapper">
+    <div className="relative overflow-hidden rounded-xl bg-surface-container-low group/row-wrapper will-change-transform">
       {/* Botones de acción revelados al deslizar hacia la izquierda (Mobile Swipe Actions) */}
       {hasActions && (
         <div className="absolute inset-y-0 right-0 flex items-stretch z-0">
@@ -58,7 +58,6 @@ export function ProductRow({ product, rate, isRateFresh = true, onEdit, onDelete
       )}
 
       <motion.div
-        layout
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
@@ -76,7 +75,7 @@ export function ProductRow({ product, rate, isRateFresh = true, onEdit, onDelete
             onSelect(product);
           }
         }}
-        className={`relative z-10 group flex items-center gap-4 px-4 py-3 bg-white border border-border hover:border-primary-fixed-dim hover:shadow-md card-shadow transition-colors duration-200 ${
+        className={`relative z-10 group flex items-center gap-4 px-4 py-3 bg-white border border-border hover:border-primary-fixed-dim hover:shadow-md card-shadow rounded-xl transition-colors duration-200 ${
           onSelect ? 'cursor-pointer' : ''
         }`}
       >
