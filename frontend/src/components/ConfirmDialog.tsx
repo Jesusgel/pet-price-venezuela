@@ -111,7 +111,7 @@ export function ConfirmDialog({
           aria-labelledby="confirm-dialog-title"
           aria-describedby="confirm-dialog-description"
           onClick={onCancel}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm"
         >
           <motion.div
             initial={{ opacity: 0 }}
@@ -127,7 +127,7 @@ export function ConfirmDialog({
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-border rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6 sm:p-8 text-center space-y-6"
+            className="bg-white/95 backdrop-blur-md border border-border rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6 sm:p-8 text-center space-y-6"
           >
             {/* Icono de advertencia / severidad */}
             <div
