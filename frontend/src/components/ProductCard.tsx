@@ -2,29 +2,50 @@
 
 import { Product } from '@/types';
 import { motion } from 'framer-motion';
-import { Package, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { formatBs, formatUSD } from '@/utils/currency';
+import { getCategoryVisual } from '@/utils/categoryVisuals';
 
 interface ProductCardProps {
   product: Product;
   rate: number | undefined;
+  isRateFresh?: boolean;
   onEdit?: (product: Product) => void;
   onDelete?: (id: number) => void;
+  onSelect?: (product: Product) => void;
 }
 
-export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProps) {
-  // Usa price_bs de la API si está disponible; si no, calcula con el rate BCV
-  const priceBs = product.price_bs || (rate ? product.price_usd * rate : null);
+export function ProductCard({ product, rate, isRateFresh = true, onEdit, onDelete, onSelect }: ProductCardProps) {
+  // Prioriza el cálculo dinámico con la tasa activa en memoria para recálculo instantáneo
+  const priceBs = rate ? Number((product.price_usd * rate).toFixed(2)) : (product.price_bs ?? null);
+  const visual = getCategoryVisual(product.category);
 
   return (
     <motion.div
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-      className="group relative bg-white rounded-2xl p-5 card-shadow hover:card-shadow-hover border border-border hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full"
+      onClick={() => onSelect?.(product)}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onSelect(product);
+        }
+      }}
+      className={`group relative bg-white rounded-2xl p-5 card-shadow hover:card-shadow-hover border border-border hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full ${
+        onSelect ? 'cursor-pointer' : ''
+      }`}
     >
       {/* Badges + acciones */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
-        <div className="bg-surface-container text-on-surface-variant text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide border border-border">
-          {product.category}
+        <div
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide border flex items-center gap-1.5 shadow-xs transition-colors ${visual.badgeClass}`}
+        >
+          <span className="text-xs leading-none" role="img" aria-label={visual.label}>
+            {visual.emoji}
+          </span>
+          <span>{product.category}</span>
         </div>
 
         <div className="flex gap-2">
@@ -49,9 +70,17 @@ export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProp
         </div>
       </div>
 
-      {/* Imagen / placeholder */}
-      <div className="w-full aspect-square bg-surface-container-low rounded-xl mb-4 flex items-center justify-center border border-border overflow-hidden">
-        <Package className="w-16 h-16 text-surface-dim group-hover:scale-110 transition-transform duration-500" />
+      {/* Imagen / emoji de categoría ultraligero */}
+      <div
+        className={`w-full aspect-square bg-gradient-to-br ${visual.bgGradient} rounded-xl mb-4 flex items-center justify-center border ${visual.borderColor} overflow-hidden transition-colors duration-300`}
+      >
+        <span
+          role="img"
+          aria-label={visual.label}
+          className="text-6xl sm:text-7xl select-none group-hover:scale-110 transition-transform duration-300 drop-shadow-xs"
+        >
+          {visual.emoji}
+        </span>
       </div>
 
       {/* Contenido */}
@@ -74,15 +103,17 @@ export function ProductCard({ product, rate, onEdit, onDelete }: ProductCardProp
           <div className="flex flex-col">
             <span className="text-xs font-medium text-muted-foreground">Precio USD</span>
             <span className="text-lg font-black text-primary">
-              ${Number(product.price_usd).toFixed(2)}
+              {formatUSD(product.price_usd)}
             </span>
           </div>
 
           <div className="flex flex-col items-end text-right">
             <span className="text-xs font-medium text-muted-foreground">Precio BCV</span>
-            {priceBs !== null ? (
+            {!isRateFresh ? (
+              <div className="h-6 w-20 bg-surface-container-high animate-pulse rounded my-0.5" title="Verificando tasa oficial..." />
+            ) : priceBs !== null ? (
               <span className="text-lg font-bold text-secondary">
-                Bs.&nbsp;{Number(priceBs).toFixed(2)}
+                {formatBs(priceBs)}
               </span>
             ) : (
               <span className="text-sm font-medium text-outline italic">

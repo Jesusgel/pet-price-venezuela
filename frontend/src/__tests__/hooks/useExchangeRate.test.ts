@@ -10,7 +10,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 import { api } from '@/services/api';
-import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useExchangeRate, getVenezuelaDate, resetSessionRateVerification } from '@/hooks/useExchangeRate';
 import { ExchangeRate } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +39,11 @@ function createWrapper(client: QueryClient) {
 // ---------------------------------------------------------------------------
 describe('useExchangeRate', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('retorna la fecha en formato YYYY-MM-DD con getVenezuelaDate', () => {
+    const vetDate = getVenezuelaDate();
+    expect(vetDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 
   it('retorna los datos de la tasa BCV cuando la API responde correctamente', async () => {
     vi.mocked(api.getExchangeRate).mockResolvedValue(mockRate);
@@ -92,4 +97,66 @@ describe('useExchangeRate', () => {
       expect(cachedData?.rate).toBe(36.5);
     });
   });
+
+  it('invalida queries de products si la tasa cambia', async () => {
+    vi.mocked(api.getExchangeRate).mockResolvedValue(mockRate);
+    const client = createTestQueryClient();
+    const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
+
+    const { rerender } = renderHook(() => useExchangeRate(), { wrapper: createWrapper(client) });
+
+    await waitFor(() => {
+      expect(client.getQueryData(['exchangeRate'])).toBeDefined();
+    });
+
+    // Simular que la tasa cambia a un nuevo valor
+    const updatedRate = { ...mockRate, rate: 38.0 };
+    vi.mocked(api.getExchangeRate).mockResolvedValue(updatedRate);
+    client.setQueryData(['exchangeRate'], updatedRate);
+
+    rerender();
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['products'] });
+    });
+  });
+
+  it('aplica cooldown y no dispara bucles infinitos cuando rate_date es anterior a hoy', async () => {
+    // Tasa con fecha antigua (ej. fin de semana o feriado)
+    const oldRate = { ...mockRate, rate_date: '2020-01-01' };
+    vi.mocked(api.getExchangeRate).mockResolvedValue(oldRate);
+    const client = createTestQueryClient();
+    const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
+
+    const { rerender } = renderHook(() => useExchangeRate(), { wrapper: createWrapper(client) });
+
+    await waitFor(() => {
+      expect(client.getQueryData(['exchangeRate'])).toBeDefined();
+    });
+
+    // Múltiples re-renders no deben disparar invalidaciones continuas por el cooldown
+    rerender();
+    rerender();
+    rerender();
+
+    // Solo se debe haber intentado como máximo 1 vez debido al cooldown de 5 minutos
+    const exchangeRateInvalidations = invalidateSpy.mock.calls.filter(
+      (call) => Array.isArray(call) && JSON.stringify(call[0]) === JSON.stringify({ queryKey: ['exchangeRate'] })
+    );
+    expect(exchangeRateInvalidations.length).toBeLessThanOrEqual(1);
+  });
+
+  it('expone isRateFresh en true una vez que la tasa ha sido verificada contra la red', async () => {
+    resetSessionRateVerification();
+    vi.mocked(api.getExchangeRate).mockResolvedValue(mockRate);
+    const client = createTestQueryClient();
+
+    const { result } = renderHook(() => useExchangeRate(), { wrapper: createWrapper(client) });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.isRateFresh).toBe(true);
+    });
+  });
 });
+

@@ -7,13 +7,17 @@ import { ProductRowSkeleton } from '@/components/ProductRowSkeleton';
 import { ViewToggle } from '@/components/ViewToggle';
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useQueryClient } from '@tanstack/react-query';
 import { useViewMode } from '@/hooks/useViewMode';
-import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { ArrowLeft, ArrowRight, ChevronRight, PackageSearch, Plus, RefreshCw, Search, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { ProductModal } from '@/components/ProductModal';
+import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { toast } from 'react-hot-toast';
 import { Product, ProductCreate, ProductUpdate, SortField, SortOrder } from '@/types';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 const SORT_OPTIONS: { label: string; field: SortField; order: SortOrder }[] = [
   { label: 'Nombre A→Z',    field: 'name',       order: 'asc'  },
@@ -25,30 +29,89 @@ const SORT_OPTIONS: { label: string; field: SortField; order: SortOrder }[] = [
 ];
 
 export default function ProductosPage() {
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { viewMode, setViewMode } = useViewMode();
+  const isMobile = useIsMobile();
+  const effectiveViewMode = isMobile ? 'list' : viewMode;
+
+  // Pull-to-refresh móvil coordinado (AC-05)
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartYRef = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (typeof window !== 'undefined' && window.scrollY <= 5) {
+      touchStartYRef.current = e.touches[0].clientY;
+    } else {
+      touchStartYRef.current = 0;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartYRef.current === 0 || isRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartYRef.current;
+    if (deltaY > 0 && typeof window !== 'undefined' && window.scrollY <= 5) {
+      setPullDistance(Math.min(70, deltaY * 0.4));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance >= 45 && !isRefreshing) {
+      setIsRefreshing(true);
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['exchangeRate'] }),
+          queryClient.invalidateQueries({ queryKey: ['products'] }),
+        ]);
+        toast.success('Catálogo y tasa actualizados');
+      } catch {
+        toast.error('Error al actualizar datos');
+      } finally {
+        setIsRefreshing(false);
+        setPullDistance(0);
+        touchStartYRef.current = 0;
+      }
+    } else {
+      setPullDistance(0);
+      touchStartYRef.current = 0;
+    }
+  };
 
   const { field: sortBy, order: sortOrder } = {
     field: SORT_OPTIONS[sortKey].field,
     order: SORT_OPTIONS[sortKey].order,
   };
 
-  useEffect(() => { setPage(1); }, [search, category, sortKey]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, category, sortKey]);
 
   const { data: paginatedData, isLoading: isLoadingProducts, isError: isErrorProducts } = useProducts(
-    search,
+    debouncedSearch,
     category,
     page,
     sortBy,
     sortOrder,
   );
   const { data: categoriesList = [] } = useCategories();
-  const { data: rateData } = useExchangeRate();
+  const { data: rateData, isRateFresh } = useExchangeRate();
 
   const products = paginatedData?.items ?? [];
   const totalPages = paginatedData?.total_pages ?? 1;
@@ -95,19 +158,43 @@ export default function ProductosPage() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+    <main
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in relative"
+    >
+      {/* Indicador táctil Pull-to-Refresh coordinado (AC-05) */}
+      {(pullDistance > 0 || isRefreshing) && (
+        <div
+          style={{ height: `${isRefreshing ? 48 : pullDistance}px` }}
+          className="flex justify-center items-center overflow-hidden transition-all duration-150 mb-2"
+        >
+          <div className="flex items-center gap-2 text-xs font-semibold text-secondary bg-surface-container px-3.5 py-1.5 rounded-full shadow-xs border border-border">
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>
+              {isRefreshing
+                ? 'Actualizando catálogo y tasa...'
+                : pullDistance >= 45
+                ? 'Suelta para actualizar'
+                : 'Desliza para actualizar'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
+      <nav className="hidden md:flex items-center gap-2 text-xs text-muted-foreground font-medium mb-4">
         <Link href="/dashboard" className="hover:text-primary transition-colors">
-          Dashboard
+          Panel de Control
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-outline" />
         <span className="text-primary font-semibold">Gestión de Productos</span>
       </nav>
 
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-        <div className="max-w-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 mb-6 md:mb-10">
+        <div className="hidden md:block max-w-2xl">
           <h1 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight mb-3 font-display">
             Catálogo de Productos
           </h1>
@@ -117,29 +204,44 @@ export default function ProductosPage() {
         </div>
 
         <div className="flex flex-col w-full md:w-auto gap-4 md:items-end">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleCreateProduct}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              Añadir Producto
-            </button>
+          <div className="hidden md:flex items-center gap-3">
+            {isAdmin && (
+              <button
+                onClick={handleCreateProduct}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white bg-secondary hover:bg-secondary/90 transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                <Plus className="w-5 h-5" />
+                Añadir Producto
+              </button>
+            )}
             <ViewToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
 
           <div className="flex w-full md:w-auto gap-3 flex-wrap">
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 md:w-52 px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline"
-            />
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar productos..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all placeholder:text-outline text-foreground"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-container transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
+              className="hidden md:block px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
             >
               <option value="">Todas las categorías</option>
               {categoriesList.map((cat) => (
@@ -151,7 +253,7 @@ export default function ProductosPage() {
             <select
               value={sortKey}
               onChange={(e) => setSortKey(Number(e.target.value))}
-              className="px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
+              className="hidden md:block px-4 py-2.5 rounded-lg border border-border bg-surface-container-low shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/25 focus:border-secondary transition-all text-foreground"
             >
               {SORT_OPTIONS.map((opt, i) => (
                 <option key={i} value={i}>{opt.label}</option>
@@ -167,7 +269,7 @@ export default function ProductosPage() {
           <p className="text-error font-semibold mb-1">Hubo un error al cargar los productos</p>
           <p className="text-error/80 text-sm">Asegúrate de que el backend esté en ejecución y reintenta.</p>
         </div>
-      ) : viewMode === 'grid' ? (
+      ) : effectiveViewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoadingProducts ? (
             Array.from({ length: 8 }).map((_, i) => (
@@ -187,8 +289,10 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
-                onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
+                isRateFresh={isRateFresh}
+                onSelect={setSelectedProduct}
+                onEdit={isAdmin ? handleEditProduct : undefined}
+                onDelete={isAdmin ? handleDeleteProduct : undefined}
               />
             ))
           )}
@@ -213,8 +317,10 @@ export default function ProductosPage() {
                 key={product.id}
                 product={product}
                 rate={rateData?.rate}
-                onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
+                isRateFresh={isRateFresh}
+                onSelect={setSelectedProduct}
+                onEdit={isAdmin ? handleEditProduct : undefined}
+                onDelete={isAdmin ? handleDeleteProduct : undefined}
               />
             ))
           )}
@@ -289,6 +395,35 @@ export default function ProductosPage() {
         title={editingProduct ? 'Editar Producto' : 'Añadir Producto'}
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
+
+      {/* Product Detail View Modal */}
+      <ProductDetailModal
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        product={selectedProduct}
+        rateData={rateData}
+        isAdmin={isAdmin}
+        onEdit={(prod) => {
+          setSelectedProduct(null);
+          handleEditProduct(prod);
+        }}
+        onDelete={(id) => {
+          setSelectedProduct(null);
+          handleDeleteProduct(id);
+        }}
+      />
+
+      {/* Floating Action Button (FAB) para móviles (AC-03) */}
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={handleCreateProduct}
+          aria-label="Añadir Producto"
+          className="fixed bottom-6 right-6 z-40 md:hidden w-14 h-14 rounded-full bg-secondary hover:bg-secondary/90 text-white shadow-xl hover:shadow-2xl active:scale-95 transition-all flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-secondary/30"
+        >
+          <Plus className="w-7 h-7" />
+        </button>
+      )}
     </main>
   );
 }

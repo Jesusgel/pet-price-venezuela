@@ -11,3 +11,4 @@ class ExchangeRate(SQLModel, table=True):
     source: str = Field(default="dolarapi")
     rate_date: date = Field(index=True)
     fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    changed_by_user_id: Optional[int] = Field(default=None, foreign_key="users.id")

@@ -4,7 +4,6 @@ from decimal import Decimal
 from fastapi import HTTPException
 import httpx
 
-from app.models.exchange_rate import ExchangeRate
 from app.repositories.rate_repository import ExchangeRateRepository
 from app.services.dolar_service import DolarService
 

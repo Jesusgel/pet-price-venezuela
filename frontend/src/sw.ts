@@ -1,4 +1,4 @@
-﻿import { defaultCache } from "@serwist/next/worker";
+import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import {
   Serwist,
@@ -45,7 +45,7 @@ const serwist = new Serwist({
         networkTimeoutSeconds: 3,
         plugins: [
           new CacheableResponsePlugin({ statuses: [0, 200] }),
-          new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 43200 }),
+          new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 7200 }),
         ],
       }),
     },
@@ -66,3 +66,9 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});

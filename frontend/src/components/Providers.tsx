@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { get, set, del } from 'idb-keyval';
 import { useState, useMemo } from 'react';
+import { AuthProvider } from '@/hooks/useAuth';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -48,12 +49,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
         persister,
         maxAge: 24 * 60 * 60 * 1000,
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) =>
-            query.state.status === 'success',
+          shouldDehydrateQuery: (query) => {
+            if (query.state.status !== 'success') return false;
+            // Para la tasa de cambio, restringir la persistencia en IndexedDB a 2 horas (TTL del backend)
+            if (query.queryKey[0] === 'exchangeRate') {
+              const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+              return Date.now() - query.state.dataUpdatedAt < TWO_HOURS_MS;
+            }
+            return true;
+          },
         },
       }}
     >
-      {children}
+      <AuthProvider>
+        {children}
+      </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </PersistQueryClientProvider>
   );

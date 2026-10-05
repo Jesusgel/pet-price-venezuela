@@ -15,7 +15,7 @@ export default function DashboardPage() {
   return (
     <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
       {/* Welcome Banner */}
-      <div className="mb-10 bg-gradient-to-r from-surface-container-low via-surface-container to-surface-container-high p-6 sm:p-8 rounded-3xl border border-border">
+      <div className="hidden md:block mb-10 bg-gradient-to-r from-surface-container-low via-surface-container to-surface-container-high p-6 sm:p-8 rounded-3xl border border-border">
         <h1 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight font-display mb-2">
           Bienvenido al Panel de Control
         </h1>

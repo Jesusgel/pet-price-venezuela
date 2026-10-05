@@ -1,48 +1,41 @@
-from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query, Request
 
+from app.api.deps import get_current_active_admin, get_dolar_service, get_rate_service
+from app.core.limiter import limiter
+from app.models.user import User
 from app.schemas.exchange_rate import (
     ExchangeRateResponse,
     ExchangeRateUpdate,
     PaginatedExchangeRateResponse,
+    RatePreviewResponse,
 )
 from app.services.dolar_service import DolarService
 from app.services.rate_service import RateService
-from app.api.deps import get_dolar_service, get_rate_service
 
 router = APIRouter()
 
 
 @router.get("", response_model=ExchangeRateResponse)
 @router.get("/", response_model=ExchangeRateResponse)
-async def read_rate(dolar_service: DolarService = Depends(get_dolar_service)):
-    """Get the most recently fetched exchange rate, and update it if it's stale."""
-    latest = await dolar_service.get_latest_rate()
-    
-    needs_update = False
-    if not latest:
-        needs_update = True
-    else:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        # Check if the rate was fetched more than 2 hours ago
-        if latest.fetched_at < now - timedelta(hours=2):
-            needs_update = True
-            
-    if needs_update:
-        try:
-            return await dolar_service.update_exchange_rate()
-        except Exception:
-            if latest:
-                return latest
-            raise HTTPException(status_code=503, detail="Service Unavailable: cannot fetch current exchange rate.")
-            
-    return latest
+@limiter.limit("100/minute")
+async def read_rate(
+    request: Request,
+    dolar_service: DolarService = Depends(get_dolar_service),
+    rate_service: RateService = Depends(get_rate_service),
+):
+    """Obtiene la tasa de cambio vigente, sincronizándola automáticamente si es un nuevo día o está vencida (Público)."""
+    return await rate_service.get_current_rate(dolar_service)
 
 
 @router.post("/update-rate", response_model=ExchangeRateResponse)
-async def refresh_rate(dolar_service: DolarService = Depends(get_dolar_service)):
-    """Fetch from DolarAPI and update DB if needed."""
-    return await dolar_service.update_exchange_rate()
+@limiter.limit("10/minute")
+async def refresh_rate(
+    request: Request,
+    dolar_service: DolarService = Depends(get_dolar_service),
+    _admin: User = Depends(get_current_active_admin),
+):
+    """Fuerza la consulta a DolarAPI y actualiza la tasa en base de datos (Admin)."""
+    return await dolar_service.update_exchange_rate(force=True)
 
 
 @router.get("/history", response_model=PaginatedExchangeRateResponse)
@@ -51,14 +44,29 @@ async def read_rate_history(
     limit: int = Query(default=20, ge=1, le=100),
     rate_service: RateService = Depends(get_rate_service),
 ):
-    """Obtiene el historial paginado de tasas de cambio."""
+    """Obtiene el historial paginado de tasas de cambio (Público)."""
     return await rate_service.get_all_rates(page, limit)
+
+
+@router.post("/preview", response_model=RatePreviewResponse)
+async def preview_rate_change(
+    rate_in: ExchangeRateUpdate,
+    rate_service: RateService = Depends(get_rate_service),
+    _admin: User = Depends(get_current_active_admin),
+):
+    """Calcula desviación porcentual y simula el impacto en productos sin persistir cambios (Admin)."""
+    return await rate_service.preview_rate_change(rate_in)
 
 
 @router.put("/current", response_model=ExchangeRateResponse)
 async def update_current_rate(
     rate_in: ExchangeRateUpdate,
     rate_service: RateService = Depends(get_rate_service),
+    current_admin: User = Depends(get_current_active_admin),
 ):
-    """Edita la tasa de cambio actual (la más reciente)."""
-    return await rate_service.update_current_rate(rate_in)
+    """Edita la tasa de cambio actual registrando auditoría del administrador (Admin)."""
+    return await rate_service.update_current_rate(
+        rate_in,
+        changed_by_user_id=current_admin.id,
+        changed_by_username=current_admin.username,
+    )

@@ -74,16 +74,40 @@ async def test_read_products_filter_search(client: AsyncClient, db_session):
     data = response.json()
     assert data["total"] == 1
     assert data["items"][0]["name"] == "Food Alpha"
-    
+
+    # Test case and accent insensitivity
+    # 1. Product without accent, query with accent and lowercase
+    response_accent1 = await client.get("/api/v1/products/?search=álpha")
+    assert response_accent1.status_code == 200
+    data_accent1 = response_accent1.json()
+    assert data_accent1["total"] == 1
+    assert data_accent1["items"][0]["name"] == "Food Alpha"
+
+    # 2. Add product with accents and mixed cases
+    p3 = Product(name="Alimento Nutrición Óptima", price_usd=Decimal("15.0"), category="Dog", unit="kg")
+    db_session.add(p3)
+    await db_session.commit()
+
+    # Query without accents and lowercase
+    response_accent2 = await client.get("/api/v1/products/?search=nutricion optima")
+    assert response_accent2.status_code == 200
+    data_accent2 = response_accent2.json()
+    assert data_accent2["total"] == 1
+    assert data_accent2["items"][0]["name"] == "Alimento Nutrición Óptima"
+
+    # Query with partial match and uppercase
+    response_accent3 = await client.get("/api/v1/products/?search=ALIMENTO")
+    assert response_accent3.status_code == 200
+    assert response_accent3.json()["total"] == 1
+
     response2 = await client.get("/api/v1/products/?category=Dog")
     assert response2.status_code == 200
     data2 = response2.json()
-    assert data2["total"] == 1
-    assert data2["items"][0]["name"] == "Treat Beta"
+    assert data2["total"] == 2
 
 
 @pytest.mark.asyncio
-async def test_create_product(client: AsyncClient, db_session):
+async def test_create_product(client: AsyncClient, db_session, auth_headers: dict):
     from app.repositories.rate_repository import ExchangeRateRepository
     from datetime import date
     
@@ -97,7 +121,12 @@ async def test_create_product(client: AsyncClient, db_session):
         "unit": "piece"
     }
     
-    response = await client.post("/api/v1/products/", json=new_product)
+    # 1. Sin token -> 401 Unauthorized
+    unauth_res = await client.post("/api/v1/products/", json=new_product)
+    assert unauth_res.status_code == 401
+
+    # 2. Con token de admin -> 201 Created
+    response = await client.post("/api/v1/products/", json=new_product, headers=auth_headers)
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "New Cat Toy"
@@ -124,7 +153,7 @@ async def test_read_product_by_id(client: AsyncClient, db_session):
     assert Decimal(data["price_bs"]) == Decimal("400.0")
 
 @pytest.mark.asyncio
-async def test_update_product(client: AsyncClient, db_session):
+async def test_update_product(client: AsyncClient, db_session, auth_headers: dict):
     from app.repositories.rate_repository import ExchangeRateRepository
     from datetime import date
     
@@ -140,7 +169,12 @@ async def test_update_product(client: AsyncClient, db_session):
         "price_usd": "15.0"
     }
     
-    response = await client.put(f"/api/v1/products/{p.id}", json=update_data)
+    # Sin token -> 401
+    unauth_res = await client.put(f"/api/v1/products/{p.id}", json=update_data)
+    assert unauth_res.status_code == 401
+
+    # Con token -> 200
+    response = await client.put(f"/api/v1/products/{p.id}", json=update_data, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Food Alpha"
@@ -148,7 +182,7 @@ async def test_update_product(client: AsyncClient, db_session):
     assert Decimal(data["price_bs"]) == Decimal("600.0")
 
 @pytest.mark.asyncio
-async def test_delete_product(client: AsyncClient, db_session):
+async def test_delete_product(client: AsyncClient, db_session, auth_headers: dict):
     from app.repositories.rate_repository import ExchangeRateRepository
     from datetime import date
     
@@ -160,7 +194,12 @@ async def test_delete_product(client: AsyncClient, db_session):
     await db_session.commit()
     await db_session.refresh(p)
     
-    response = await client.delete(f"/api/v1/products/{p.id}")
+    # Sin token -> 401
+    unauth_res = await client.delete(f"/api/v1/products/{p.id}")
+    assert unauth_res.status_code == 401
+
+    # Con token -> 204
+    response = await client.delete(f"/api/v1/products/{p.id}", headers=auth_headers)
     assert response.status_code == 204
     
     deleted_p = await db_session.get(Product, p.id)
@@ -169,3 +208,78 @@ async def test_delete_product(client: AsyncClient, db_session):
     
     response_get = await client.get(f"/api/v1/products/{p.id}")
     assert response_get.status_code == 404
+
+    # Verificar que el catálogo público tampoco lista el producto borrado lógicamente
+    list_res = await client.get("/api/v1/products/")
+    assert list_res.status_code == 200
+    product_ids = [item["id"] for item in list_res.json()["items"]]
+    assert p.id not in product_ids
+
+
+@pytest.mark.asyncio
+async def test_create_and_get_product_with_multi_prices(client: AsyncClient, db_session, auth_headers: dict):
+    from app.repositories.rate_repository import ExchangeRateRepository
+    from datetime import date
+
+    rate_repo = ExchangeRateRepository(db_session)
+    await rate_repo.create(rate=Decimal("40.0"), rate_date=date.today(), source="integration")
+
+    payload = {
+        "name": "Super Dog 15kg",
+        "price_usd": "50.00",
+        "price_usd_retail": "4.00",
+        "price_usd_cash": "45.00",
+        "price_usd_retail_cash": "3.50",
+        "category": "Perro",
+        "unit": "kg",
+        "weight_kg": 15.0,
+    }
+
+    response = await client.post("/api/v1/products/", json=payload, headers=auth_headers)
+    assert response.status_code == 201
+    data = response.json()
+
+    assert data["name"] == "Super Dog 15kg"
+    assert Decimal(data["price_usd"]) == Decimal("50.00")
+    assert Decimal(data["price_bs"]) == Decimal("2000.00")
+    assert Decimal(data["price_usd_retail"]) == Decimal("4.00")
+    assert Decimal(data["price_bs_retail"]) == Decimal("160.00")
+    assert Decimal(data["price_usd_cash"]) == Decimal("45.00")
+    assert Decimal(data["price_usd_retail_cash"]) == Decimal("3.50")
+
+    # Obtener por ID y verificar integridad (GET es público)
+    get_res = await client.get(f"/api/v1/products/{data['id']}")
+    assert get_res.status_code == 200
+    get_data = get_res.json()
+    assert Decimal(get_data["price_bs_retail"]) == Decimal("160.00")
+    assert Decimal(get_data["price_usd_cash"]) == Decimal("45.00")
+
+
+@pytest.mark.asyncio
+async def test_update_product_multi_prices(client: AsyncClient, db_session, auth_headers: dict):
+    from app.repositories.rate_repository import ExchangeRateRepository
+    from datetime import date
+
+    rate_repo = ExchangeRateRepository(db_session)
+    await rate_repo.create(rate=Decimal("50.0"), rate_date=date.today(), source="integration")
+
+    p = Product(name="Gato Mix", price_usd=Decimal("10.0"), category="Gato", unit="kg")
+    db_session.add(p)
+    await db_session.commit()
+    await db_session.refresh(p)
+
+    update_payload = {
+        "price_usd_retail": "1.50",
+        "price_usd_cash": "9.00",
+    }
+
+    response = await client.put(f"/api/v1/products/{p.id}", json=update_payload, headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert Decimal(data["price_usd"]) == Decimal("10.0")
+    assert Decimal(data["price_bs"]) == Decimal("500.0")
+    assert Decimal(data["price_usd_retail"]) == Decimal("1.50")
+    assert Decimal(data["price_bs_retail"]) == Decimal("75.00")
+    assert Decimal(data["price_usd_cash"]) == Decimal("9.00")
+    assert data["price_usd_retail_cash"] is None
+

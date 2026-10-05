@@ -11,7 +11,8 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { data: rateData, isLoading, isError } = useExchangeRate();
+  const { data: rateData, isLoading, isError, isFetching, isStale } = useExchangeRate();
+  const isUpdating = Boolean(isFetching && isStale);
 
   return (
     <header className="sticky top-0 z-30 w-full glass-panel border-b border-border">
@@ -49,24 +50,34 @@ export function Header({ onMenuClick }: HeaderProps) {
           {/* Right section: Tasa BCV Widget */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-surface-container px-3.5 sm:px-4 py-1.5 rounded-full border border-border shadow-sm">
-              <TrendingUp className="w-4 h-4 text-secondary shrink-0" />
+              <TrendingUp className={`w-4 h-4 text-secondary shrink-0 ${isUpdating ? 'animate-spin' : ''}`} />
               <div className="flex flex-col">
-                <span className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
                   Tasa BCV{rateData?.rate_date ? ` (${rateData.rate_date.split('-').reverse().join('/')})` : ''}
+                  {isUpdating && (
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-secondary animate-ping" title="Actualizando tasa..." />
+                  )}
                 </span>
                 {isLoading ? (
                   <div className="h-4 w-16 bg-surface-container-high animate-pulse rounded" />
                 ) : isError ? (
                   <span className="text-xs sm:text-sm font-semibold text-error">Error</span>
                 ) : (
-                  <motion.span
-                    key={rateData?.rate}
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs sm:text-sm font-bold text-primary"
-                  >
-                    Bs.&nbsp;{rateData?.rate ? Number(rateData.rate).toFixed(2) : '0.00'}
-                  </motion.span>
+                  <div className="flex items-center gap-1.5">
+                    <motion.span
+                      key={rateData?.rate}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`text-xs sm:text-sm font-bold text-primary ${isUpdating ? 'opacity-70' : ''}`}
+                    >
+                      Bs.&nbsp;{rateData?.rate ? Number(rateData.rate).toFixed(2) : '0.00'}
+                    </motion.span>
+                    {isUpdating && (
+                      <span className="text-[9px] font-semibold text-secondary animate-pulse hidden sm:inline">
+                        Actualizando...
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

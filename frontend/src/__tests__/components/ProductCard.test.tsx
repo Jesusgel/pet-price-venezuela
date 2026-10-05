@@ -24,7 +24,11 @@ const baseProduct: Product = {
   id: 1,
   name: 'Pedigree Adulto',
   price_usd: 12.5,
+  price_usd_retail: null,
+  price_usd_cash: null,
+  price_usd_retail_cash: null,
   price_bs: null,
+  price_bs_retail: null,
   category: 'perro',
   brand: 'Pedigree',
   unit: 'kg',
@@ -66,6 +70,29 @@ describe('ProductCard — renderizado', () => {
     render(<ProductCard product={product} rate={undefined} />);
     expect(screen.getByText('lata')).toBeInTheDocument();
   });
+
+  it('muestra el emoji de perro para productos de categoría perro', () => {
+    render(<ProductCard product={baseProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐶').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji de gato para productos de categoría gato', () => {
+    const catProduct = { ...baseProduct, category: 'gato' };
+    render(<ProductCard product={catProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐱').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji de ganado para productos de categoría ganado', () => {
+    const cowProduct = { ...baseProduct, category: 'ganado' };
+    render(<ProductCard product={cowProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐮').length).toBeGreaterThan(0);
+  });
+
+  it('muestra el emoji genérico para otras categorías', () => {
+    const otherProduct = { ...baseProduct, category: 'accesorios' };
+    render(<ProductCard product={otherProduct} rate={undefined} />);
+    expect(screen.getAllByText('🐾').length).toBeGreaterThan(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -73,20 +100,34 @@ describe('ProductCard — renderizado', () => {
 // ---------------------------------------------------------------------------
 describe('ProductCard — precio en Bs.', () => {
   it('calcula price_bs = price_usd * rate cuando product.price_bs es null', () => {
-    // 12.5 * 36.5 = 456.25
+    // 12.5 * 36.5 = 456.25 -> Bs. 456,25
     render(<ProductCard product={baseProduct} rate={36.5} />);
-    expect(screen.getByText('Bs. 456.25')).toBeInTheDocument();
+    expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
   });
 
-  it('usa el price_bs de la API cuando está disponible (ignorando rate)', () => {
+  it('prioriza la tasa activa rate para calcular price_bs reactivamente', () => {
     const product = { ...baseProduct, price_bs: 500.0 };
     render(<ProductCard product={product} rate={36.5} />);
-    expect(screen.getByText('Bs. 500.00')).toBeInTheDocument();
+    expect(screen.getByText('Bs. 456,25')).toBeInTheDocument();
+  });
+
+  it('usa el price_bs de la API como fallback cuando rate es undefined', () => {
+    const product = { ...baseProduct, price_bs: 500.0 };
+    render(<ProductCard product={product} rate={undefined} />);
+    expect(screen.getByText('Bs. 500,00')).toBeInTheDocument();
   });
 
   it('muestra "No disponible" cuando no hay rate ni price_bs', () => {
     render(<ProductCard product={baseProduct} rate={undefined} />);
     expect(screen.getByText('No disponible')).toBeInTheDocument();
+  });
+
+  it('muestra un skeleton shimmer en lugar del precio BCV cuando isRateFresh es false', () => {
+    const { container } = render(<ProductCard product={baseProduct} rate={36.5} isRateFresh={false} />);
+    // No debe mostrar el precio calculado en Bs para evitar flash of stale data
+    expect(screen.queryByText('Bs. 456,25')).not.toBeInTheDocument();
+    // Debe renderizar el skeleton con animate-pulse
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 });
 

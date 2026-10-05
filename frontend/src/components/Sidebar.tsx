@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Package, TrendingUp, X } from 'lucide-react';
+import { LayoutGrid, Package, TrendingUp, X, Lock, LogOut, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { toast } from 'react-hot-toast';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -12,13 +16,22 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { label: 'Panel de Control', href: '/dashboard', icon: LayoutGrid },
   { label: 'Gestión de Productos', href: '/productos', icon: Package },
   { label: 'Gestión de Tasas', href: '/tasas', icon: TrendingUp },
 ];
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { user, isAdmin, logout } = useAuth();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const handleConfirmLogout = () => {
+    logout();
+    setIsLogoutDialogOpen(false);
+    if (onClose) onClose();
+    toast.success('Sesión cerrada correctamente');
+  };
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-border shadow-sm">
@@ -83,16 +96,64 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         })}
       </nav>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-border bg-surface-container-lowest text-xs text-muted-foreground text-center">
-        <p className="font-medium text-primary">Pet-Price Venezuela</p>
-        <p className="text-[11px] text-outline mt-0.5">v1.0.0 · Tasa BCV Oficial</p>
+      {/* Auth Status & Footer Info */}
+      <div className="p-4 border-t border-border bg-surface-container-lowest space-y-3">
+        {isAdmin && user ? (
+          <div className="p-2.5 rounded-xl bg-secondary/10 border border-secondary/20 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <ShieldCheck className="w-4 h-4 text-secondary shrink-0" />
+                <span className="text-xs font-bold text-primary truncate">
+                  {user.username}
+                </span>
+              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-secondary text-white uppercase tracking-wider">
+                Admin
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogoutDialogOpen(true);
+                if (onClose) onClose();
+              }}
+              className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-error hover:bg-error/10 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            onClick={onClose}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold text-on-surface-variant bg-surface-container hover:bg-surface-container-high border border-border transition-colors"
+          >
+            <Lock className="w-3.5 h-3.5 text-secondary" />
+            <span>Acceso Administrador</span>
+          </Link>
+        )}
+
+        <div className="text-center text-[11px] text-muted-foreground">
+          <p className="font-medium text-primary">Pet-Price Venezuela</p>
+          <p className="text-[10px] text-outline mt-0.5">v1.0.0 · Tasa BCV Oficial</p>
+        </div>
       </div>
     </div>
   );
 
   return (
     <>
+      <ConfirmDialog
+        isOpen={isLogoutDialogOpen}
+        title="¿Cerrar sesión de administrador?"
+        description="Tendrás que ingresar nuevamente tus credenciales para administrar productos y tasas de cambio. ¿Deseas continuar?"
+        confirmLabel="Cerrar Sesión"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setIsLogoutDialogOpen(false)}
+      />
       {/* Desktop Fixed Sidebar */}
       <aside className="hidden md:block fixed top-0 left-0 bottom-0 w-[260px] z-40">
         {sidebarContent}

@@ -20,8 +20,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.models.product import Product  # noqa: F401
-from app.models.exchange_rate import ExchangeRate  # noqa: F401
+import app.models  # noqa: E402, F401
 
 target_metadata = SQLModel.metadata
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

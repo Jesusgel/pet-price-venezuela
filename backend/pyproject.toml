@@ -1,6 +1,6 @@
 [project]
 name = "pet-price-venezuela"
-version = "0.1.0"
+version = "1.0.0"
 description = "Backend for pet-price-venezuela"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -12,6 +12,9 @@ dependencies = [
     "asyncpg",
     "httpx",
     "pydantic-settings",
+    "pyjwt>=2.14.0",
+    "pwdlib[bcrypt]>=0.3.1",
+    "slowapi>=0.1.10",
 ]
 
 [dependency-groups]
