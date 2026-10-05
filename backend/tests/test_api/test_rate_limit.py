@@ -57,10 +57,11 @@ async def test_update_rate_limit_exceeded(mocker, client: AsyncClient, auth_head
 async def test_public_rate_within_limit(mocker, client: AsyncClient, db_session):
     """Verifica que consultas a la tasa pública funcionen con normalidad dentro del umbral."""
     from app.repositories.rate_repository import ExchangeRateRepository
+    from app.services.dolar_service import get_today_in_venezuela
     repo = ExchangeRateRepository(db_session)
     await repo.create(
         rate=Decimal("40.0"),
-        rate_date=date(2026, 9, 28),
+        rate_date=get_today_in_venezuela(),
         source="dolarapi",
     )
 
